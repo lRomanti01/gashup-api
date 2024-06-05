@@ -1,13 +1,19 @@
 import { Request, Response } from "express";
 import Community, { community } from "../model/community";
+import communityCategory,{communitycategory}from "../model/communityCategory";
 import CommunityChats ,{ communitychats } from "../model/communityChats";
+import User,{user} from "../model/user";
 
 
 const createCommunity = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
+    
+    const category = await communityCategory.findOne({ code: data.code });
+    const owner = await User.findOne({ email: data.email });
 
-    const create: community = await new Community({ ...data });
+    const create: community = await new Community({ ...data, communityCategory_id: category._id, owner_id: owner._id  });
+
     await create.save();
 
     res.status(201).send({
@@ -50,18 +56,19 @@ const getcommunities = async (req: Request, res: Response) => {
 
 const updateCommunity = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { communityName } = req.params;
+    const community: community = await Community.findOne({name:communityName});
     const { ...data } = req.body;
 
-    const community: community = await Community.findByIdAndUpdate(
-      id,
+    const communityUpdate: community = await Community.findByIdAndUpdate(
+      community._id,
       { ...data },
       { new: true }
     );
 
     res.status(200).send({
       ok: true,
-      community,
+      communityUpdate,
       mensaje: "Communidad actualizada con exito",
       message: "Community updated successfully",
     });
@@ -78,17 +85,18 @@ const updateCommunity = async (req: Request, res: Response) => {
 
 const deleteCommunity = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+      const { communityName } = req.params;
+      const community: community = await Community.findOne({name:communityName})
 
-    const community: community = await Community.findByIdAndUpdate(
-      id,
+    const communityDelete: community = await Community.findByIdAndUpdate(
+      community._id,
       { isDeleted: true, isActive: false },
       { new: true }
     );
 
     res.status(200).send({
       ok: true,
-      community,
+      communityDelete,
       mensaje: "Comunidad eliminada con exito",
       message: "Community deleted successfully",
     });
@@ -132,9 +140,12 @@ const getcommunitiesForCategories= async (req: Request, res: Response) => {
   
 const joinCommunity = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const community: community = await Community.findById(id)
-      if(community.bannedUsers_id.find(req.body))
+      const { ...data } = req.body;
+      const { communityName } = req.params;
+      const community: community = await Community.findOne({name:communityName})
+      const member = await User.findOne({ email: data.email });
+
+      if(community.bannedUsers_id.find(member._id))
         {
             res.status(200).send({
                 ok: true,
@@ -143,7 +154,7 @@ const joinCommunity = async (req: Request, res: Response) => {
               });
         }
         else{
-        const join = await community.updateOne({$push:{member_id: req.body}});
+        const join = await community.updateOne({$push:{member_id: member._id}});
 
   
       res.status(200).send({
@@ -167,12 +178,16 @@ const joinCommunity = async (req: Request, res: Response) => {
   
 const banFromCommunity = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const community: community = await Community.findById(id)
+      const { ...data } = req.body;
+      const { communityName } = req.params;
+      const community: community = await Community.findOne({name:communityName})
+      const email = await User.findOne({ email: data.email });
+      const bannedEmail = await User.findOne({ email: data.bannedEmail });
 
-      if(community.owner_id == req.body.user_id || community.admins_id.find(req.body.user_id)){
-      const ban = await community.updateOne({$push:{bannedUsers_id: req.body.bannedUser_id},
-                                             $pull:{members_id: req.body.bannedUser_id}});
+      if(community.owner_id == email._id || community.admins_id.find(email._id))
+        {
+      const ban = await community.updateOne({$push:{bannedUsers_id: bannedEmail._id},
+                                             $pull:{members_id: bannedEmail._id}});
 
   
       res.status(200).send({
@@ -204,11 +219,15 @@ const banFromCommunity = async (req: Request, res: Response) => {
   
 const assignAdmins = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const community: community = await Community.findById(id)
-      if(community.owner_id == req.body.owner_id)
+      const { ...data } = req.body;
+      const { communityName } = req.params;
+      const community: community = await Community.findOne({name:communityName})
+      const ownerEmail = await User.findOne({ email: data.ownerEmail });
+      const adminEmail = await User.findOne({ email: data.adminEmail });
+
+      if(community.owner_id == ownerEmail._id)
         {
-      const admin = await community.update({$push:{admins_id:req.body.newAdmin_id}});
+      const admin = await community.update({$push:{admins_id:adminEmail._id}});
 
   
       res.status(200).send({
@@ -241,9 +260,14 @@ const assignAdmins = async (req: Request, res: Response) => {
 
   const createChatCommunity = async (req: Request, res: Response) => {
     try {
+      
       const { ...data } = req.body;
+
+      const community = await Community.findOne({ name: data.communityname });//community_id
+      const owner = await User.findOne({ email: data.email });//chatOwner_id
   
-      const create: communitychats = await new CommunityChats({ ...data });
+      const create: communitychats = await new CommunityChats({ ...data, community_id: community._id, owner_id: owner._id  });
+
       await create.save();
   
       res.status(201).send({
@@ -265,10 +289,13 @@ const assignAdmins = async (req: Request, res: Response) => {
 
   const joinChatCommunity = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const communitychats: communitychats = await CommunityChats.findById(id)
-      const community: community = await Community.findById(communitychats.community_id)
-      if(!community.members_id.find(req.body))
+      const { ...data } = req.body;
+      const { communityName } = req.params;
+      const community: community = await Community.findOne({name:communityName})
+      const chat = await CommunityChats.findOne({ name: data.chatName,community_id: community._id });
+      const Email = await User.findOne({ email: data.Email });
+
+      if(!community.members_id.find(Email._id))
         {
             res.status(200).send({
                 ok: true,
@@ -277,7 +304,7 @@ const assignAdmins = async (req: Request, res: Response) => {
               });
         }
         else{
-        const join = await communitychats.updateOne({$push:{member_id: req.body}});
+        const join = await chat.updateOne({$push:{member_id: Email._id}});
 
   
       res.status(200).send({
@@ -300,19 +327,15 @@ const assignAdmins = async (req: Request, res: Response) => {
 
   const leaveChatCommunity = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const communitychats: communitychats = await CommunityChats.findById(id)
-      const community: community = await Community.findById(communitychats.community_id)
-      if(!community.members_id.find(req.body))
-        {
-            res.status(200).send({
-                ok: true,
-                mensaje: "Debes pertenecer a la comunidad para salirte al chat",
-                message: "You must belong to the community to leave the chat",
-              });
-        }
-        else{
-        const join = await communitychats.updateOne({$pull:{member_id: req.body}});
+      const { ...data } = req.body;
+      const { communityName } = req.params;
+      const community: community = await Community.findOne({name:communityName})
+
+      const chat = await CommunityChats.findOne({ name: data.chatName, community_id: community._id});
+
+      const Email = await User.findOne({ email: data.Email });
+      
+      const join = await chat.updateOne({$pull:{member_id: Email._id}});
 
   
       res.status(200).send({
@@ -321,7 +344,7 @@ const assignAdmins = async (req: Request, res: Response) => {
         mensaje: "dejaste el chat con exito",
         message: "You leave the chat successfully",
       });
-    }
+    
     } catch (error) {
       console.log(error);
       res.status(500).json({

@@ -30,17 +30,14 @@ const communitySchema = new Schema({
     },
     img: {
         type: String,
-        require: true,
     },
     members_id: {
         type: Schema.Types.ObjectId,
         ref: "User",
-        require: true,
     },
     admins_id: {
         type: Schema.Types.ObjectId,
         ref: "User",
-        require: true,
     },
     isDeleted: {
         type: Boolean,
@@ -53,12 +50,10 @@ const communitySchema = new Schema({
     created_at: {
         type: String,
         default: new Date().toISOString(),
-        require: true
     },
     bannedUsers_id: {
         type: Schema.Types.ObjectId,
         ref: "User",
-        require: true,
     },
     communityCategory_id: {
         type: Schema.Types.ObjectId,
