@@ -2,7 +2,7 @@ import mongoose, { Schema, model, Types } from "mongoose";
 
 export interface community extends mongoose.Document {
     name: string;
-    user_id: Types.ObjectId;
+    owner_id: Types.ObjectId;
     description: string;
     img: string;
     members_id: Array<Types.ObjectId>;
@@ -17,9 +17,9 @@ export interface community extends mongoose.Document {
 const communitySchema = new Schema({
     name: {
         type: String,
-        require: true,
+        require: false,
     },
-    user_id: {
+    owner_id: {
         type: Schema.Types.ObjectId,
         ref: "User",
         require: true,
@@ -30,17 +30,14 @@ const communitySchema = new Schema({
     },
     img: {
         type: String,
-        require: true,
     },
     members_id: {
         type: Schema.Types.ObjectId,
         ref: "User",
-        require: true,
     },
     admins_id: {
         type: Schema.Types.ObjectId,
         ref: "User",
-        require: true,
     },
     isDeleted: {
         type: Boolean,
@@ -53,12 +50,10 @@ const communitySchema = new Schema({
     created_at: {
         type: String,
         default: new Date().toISOString(),
-        require: true
     },
     bannedUsers_id: {
         type: Schema.Types.ObjectId,
         ref: "User",
-        require: true,
     },
     communityCategory_id: {
         type: Schema.Types.ObjectId,

@@ -2,8 +2,8 @@ import mongoose, { Schema, model, Types} from "mongoose";
 
 export interface communitychats extends mongoose.Document {
   community_id: Types.ObjectId;
-  user_id: Types.ObjectId;
-  members: string;
+  chatOwner_id: Types.ObjectId;
+  member_id: Array<Types.ObjectId>;
   name: string;
   img: string;
 
@@ -15,13 +15,14 @@ const communitychatsSchema = new Schema({
     ref: "Community",
     require: true,
   },
-  user_id: {
+  chatOwner_id: {
     type: Schema.Types.ObjectId,
     ref: "User",
     require: true,
   },
-  members: {
-    type: String,
+  member_id: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
     require: true,
   },
   name: {
