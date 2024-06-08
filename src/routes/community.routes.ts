@@ -13,7 +13,7 @@ communityRouter.delete("/banFromCommunity/:communityName", community.banFromComm
 communityRouter.delete("/leaveChatCommunity/:communityName", community.leaveChatCommunity);
 
 //put
-communityRouter.put('/updateCommunity/:communityName', community.updateCommunity)
+communityRouter.put("/updateCommunity/:_id", community.updateCommunity);
 communityRouter.put("/assignAdmins/:communityName", community.assignAdmins);
 
 
