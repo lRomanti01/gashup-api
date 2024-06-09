@@ -53,7 +53,7 @@ const updatePost = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { ...data } = req.body;
 
-    const post: post = await Post.findByIdAndUpdate(
+    const post: post  = await Post.findByIdAndUpdate(
       id,
       { ...data },
       { new: true }

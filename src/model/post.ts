@@ -8,8 +8,6 @@ export interface post extends mongoose.Document {
   user_id: Types.ObjectId;
   user_likes: Array<Types.ObjectId>;
   code: string;
-
-  
 }
 
 const postSchema = new Schema({

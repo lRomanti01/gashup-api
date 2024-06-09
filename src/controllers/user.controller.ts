@@ -6,6 +6,14 @@ import { encrypt } from "../helper/password-bcrypts";
 const createUser = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
+    const getUser: user = await User.findOne({ email: data.email });
+    if(getUser){
+      return res.status(400).send({
+        ok: false,
+        mensaje: "Usuario ya existente",
+        message: "User already created",
+      });
+    }
 
     const encrypts = await encrypt(data.password);
     data.password = encrypts;
