@@ -6,6 +6,8 @@ export interface communitychats extends mongoose.Document {
   member_id: Array<Types.ObjectId>;
   name: string;
   img: string;
+  isDeleted: boolean;
+  isActive: boolean;
 
 }
 
@@ -32,6 +34,14 @@ const communitychatsSchema = new Schema({
   img: {
     type: String,
     require: true,
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
   },
 });
 

@@ -1,25 +1,20 @@
 import { Request, Response } from "express";
 import User, { user } from "../model/user";
 import Roles, { role } from "../model/role";
-import { encrypt } from "../helper/password-bcrypts";
+import Post, { post } from "../model/post";
 
-const createUser = async (req: Request, res: Response) => {
+const createPost = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
 
-    const encrypts = await encrypt(data.password);
-    data.password = encrypts;
-
-    const role = await Roles.findOne({ code: data.code });
-
-    const create: user = await new User({ ...data, role: role?._id });
+    const create: post = await new Post({ ...data });
     await create.save();
 
     res.status(201).send({
       ok: true,
-      user: create,
-      mensaje: "Usuario creado con éxito",
-      message: "user created successfully",
+      post: create,
+      mensaje: "Post creado con éxito",
+      message: "post created successfully",
     });
   } catch (error) {
     console.log(error);
@@ -32,17 +27,16 @@ const createUser = async (req: Request, res: Response) => {
   }
 };
 
-const getUserByRol = async (req: Request, res: Response) => {
+const getAllPostByCommunity = async (req: Request, res: Response) => {
   try {
-    const { code } = req.params;
-    const role = await Roles.findOne({ code });
-
-    const user = await User.find({ role: role?._id, isDeleted: false });
+    const { community_id } = req.params;
+    const posts = await Post.find({ community_id }).populate("community");
 
     res.status(200).send({
       ok: true,
-      user,
-      message: "Welcome",
+      posts,
+      mensaje: "Posts encontrados correctamente",
+      message: "Posts found successfully",
     });
   } catch (error) {
     console.log(error);
@@ -54,12 +48,12 @@ const getUserByRol = async (req: Request, res: Response) => {
   }
 };
 
-const updateUser = async (req: Request, res: Response) => {
+const updatePost = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { ...data } = req.body;
 
-    const user: user | null = await User.findByIdAndUpdate(
+    const post: post | null = await Post.findByIdAndUpdate(
       id,
       { ...data },
       { new: true }
@@ -67,9 +61,9 @@ const updateUser = async (req: Request, res: Response) => {
 
     res.status(200).send({
       ok: true,
-      user,
-      mensaje: "Usuario actualizado con exito",
-      message: "User updated successfully",
+      post,
+      mensaje: "Post actualizado con exito",
+      message: "Post updated successfully",
     });
   } catch (error) {
     console.log(error);
@@ -82,11 +76,11 @@ const updateUser = async (req: Request, res: Response) => {
   }
 };
 
-const deleteUser = async (req: Request, res: Response) => {
+const deletePost = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const user: user | null = await User.findByIdAndUpdate(
+    const post: post | null = await Post.findByIdAndUpdate(
       id,
       { isDeleted: true, isActive: false },
       { new: true }
@@ -94,9 +88,9 @@ const deleteUser = async (req: Request, res: Response) => {
 
     res.status(200).send({
       ok: true,
-      user,
-      mensaje: "Usuario eliminado con exito",
-      message: "User deleted successfully",
+      post,
+      mensaje: "Post eliminado con exito",
+      message: "Post deleted successfully",
     });
   } catch (error) {
     console.log(error);
@@ -109,4 +103,4 @@ const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
-export { createUser, getUserByRol, updateUser, deleteUser };
+export { createPost, getAllPostByCommunity, updatePost, deletePost };
