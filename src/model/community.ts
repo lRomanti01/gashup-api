@@ -1,6 +1,7 @@
 import mongoose, { Schema, model, Types } from "mongoose";
 
 export interface community extends mongoose.Document {
+
     name: string;
     owner_id: Types.ObjectId;
     description: string;
@@ -32,11 +33,11 @@ const communitySchema = new Schema({
         type: String,
     },
     members_id: {
-        type: Schema.Types.ObjectId,
+        type: Array<Schema.Types.ObjectId>,
         ref: "User",
     },
     admins_id: {
-        type: Schema.Types.ObjectId,
+        type: Array<Schema.Types.ObjectId>,
         ref: "User",
     },
     isDeleted: {
@@ -52,11 +53,11 @@ const communitySchema = new Schema({
         default: new Date().toISOString(),
     },
     bannedUsers_id: {
-        type: Schema.Types.ObjectId,
+        type: Array<Schema.Types.ObjectId>,
         ref: "User",
     },
     communityCategory_id: {
-        type: Schema.Types.ObjectId,
+        type: Array<Schema.Types.ObjectId>,
         ref: "CommunityCategory",
         require: true,
     }

@@ -15,7 +15,7 @@
      *            required:
      *              - name
      *              - phone
-     *              - role
+     *              - code
      *              - img
      *              - password
      *              - email

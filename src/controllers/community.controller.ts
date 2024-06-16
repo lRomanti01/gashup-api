@@ -1,12 +1,30 @@
-import { Request, Response } from "express";
+import { Request, Response,  } from "express";
 import Community, { community } from "../model/community";
 import CommunityChats, { communitychats } from "../model/communityChats";
 import User, { user } from "../model/user";
+import CommunityCategory,{communitycategory} from "../model/communityCategory";
+import {guardarImagen } from "./uploadImage";
+import communityCategory from "../model/communityCategory";
+const mongoose = require('mongoose');
 
-const createCommunity = async (req: Request, res: Response) => {
+
+
+const createCommunity = async (req:Request,res:Response) => {
   try {
     const { ...data } = req.body;
+    const categorias=data.communityCategory_id;
+    const array= categorias.split(',');
+    const IDs=[];
+    let categories:communitycategory;
+    let n=0;
 
+    for (let i=0; i < array.length; i++) {
+      categories= await CommunityCategory.findOne({code:array[n]});
+      if (categories) {
+        IDs.push(categories._id)
+        n++
+       }
+    }
       if(Community.name==data.name){
         res.status(400).send({
           ok: true,
@@ -16,8 +34,12 @@ const createCommunity = async (req: Request, res: Response) => {
 
       }
       else
-      {      
-      const create: community = await new Community({...data});
+      { 
+        
+        guardarImagen(req)
+        const img = await guardarImagen(req);
+
+      const create: community = await new Community({...data, communityCategory_id:IDs,img:img });
       await create.save();
 
       res.status(201).send({
@@ -42,11 +64,11 @@ const createCommunity = async (req: Request, res: Response) => {
 
 const getCommunities = async (req: Request, res: Response) => {
   try {
-    const communities = await Community.find({ isActive: true });
+    const commmunity = await Community.find({ isActive: true });
 
     res.status(200).send({
       ok: true,
-      data: communities,
+      data: commmunity,
       mensaje: "todas las comunidades",
       message: "all communities",
     });
@@ -66,7 +88,7 @@ const updateCommunity = async (req: Request, res: Response) => {
     const { ...data } = req.body;
     const community: community | null = await Community.findById({ _id });
 
-    if(community?.owner_id== data.userID || community?.admins_id.find(data.userID))
+    if(community?.owner_id== data.userID || community?.admins_id==data.userID)
       {
         if (!community || community.isActive==false) 
           {
@@ -162,16 +184,15 @@ const deleteCommunity = async (req: Request, res: Response) => {
 
 const getCommunitiesForCategories = async (req: Request, res: Response) => {
   try {
-    const promises = req.body.map(async (item) => {
-      const community = await Community.find(item);
-      return community;
-    });
+    const {...data}= req.body;
+    const IDs=[];
+    const categories: communitycategory[]= await CommunityCategory.find({code:data.communityCategory_id});
+    const commmunity: community[]= await Community.find({communityCategory_id:IDs});
 
-    const communities = await Promise.all(promises);
-
+    categories.forEach(function(categorías){IDs.push(categorías._id)})
     res.status(200).send({
       ok: true,
-      communities,
+      commmunity,
       mensaje: "Todas las comunidades por estas categorías",
       message: "All communities for these categories",
     });
@@ -188,27 +209,34 @@ const getCommunitiesForCategories = async (req: Request, res: Response) => {
 const joinCommunity = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
-    const { _id } = req.params;
-    const community: community | null = await Community.findOne({_id});
-    const member = await User.findById({ _id: data.memberID });
+    const {_id} = req.params;
+    const community: community= await Community.findById(_id);
+    const member: user = await User.findById(data.memberID);
 
-    if (community?.bannedUsers_id.find(member?._id)) {
-      res.status(200).send({
-        ok: true,
-        mensaje: "Estas baneado de esta comunidad",
-        message: "You are banned from this community",
-      });
+    if (community && member) {
+      if (community.bannedUsers_id.includes(member._id)) {
+        res.status(200).send({
+          ok: true,
+          mensaje: "Estás baneado de esta comunidad",
+          message: "You are banned from this community",
+        });
+      } else {
+        await community.updateOne({ $push: { members_id: member._id } });
+        res.status(200).send({
+          ok: true,
+          mensaje: "Te uniste a la comunidad con éxito",
+          message: "You joined the community successfully",
+        });
+      }
     } else {
-      const join = await community?.updateOne({
-        $push: { member_id: member?._id },
+      res.status(404).send({
+        ok: false,
+        mensaje: "No se encontró la comunidad o el usuario",
+        message: "Community or user not found",
+        
       });
+      console.log(community)
 
-      res.status(200).send({
-        ok: true,
-        join,
-        mensaje: "Te uniste a la comunidad con exito",
-        message: "You joined the community successfully",
-      });
     }
   } catch (error) {
     console.log(error);
@@ -263,14 +291,20 @@ const banFromCommunity = async (req: Request, res: Response) => {
 
 const assignAdmins = async (req: Request, res: Response) => {
   try {
-    const { ...data } = req.body;
-    const { _id } = req.params;
-    const community: community | null = await Community.findById({ _id});
-    const ownerID = await User.findOne({ _id: data.ownerID });
-    const adminID = await User.findOne({ _id: data.adminID });
+   const { ...data } = req.body;
+   const { _id } = req.params;
 
-    if (community?.owner_id == ownerID?._id) {
-      const admin = await community?.update({$push: { admins_id: adminID?._id }});
+   const community: community | null = await Community.findById(_id.trim());
+
+    
+    const ownerID: user = await User.findOne({ _id: data.ownerID });
+    const adminID: user = await User.findOne({ _id: data.adminID });
+    console.log(ownerID._id.toString());
+    console.log(adminID._id);
+    console.log(community.owner_id.toString())
+
+    if (community.owner_id.toString() == ownerID._id.toString()) {
+      const admin = await community?.update({$push: { admins_id: adminID._id }});
 
       res.status(200).send({
         ok: true,
@@ -296,12 +330,15 @@ const assignAdmins = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+
 const getCommunityChats = async (req: Request, res: Response) => {
   try {
     const {_id}= req.params;
     const community: community | null = await Community.findById({ _id });
     if(community?.isActive==true){
-    const chats = await Community.find({ isActive: true });
+    const chats = await Community.find({community_id: community._id });
 
     res.status(200).send({
       ok: true,
@@ -330,10 +367,10 @@ const getCommunityChats = async (req: Request, res: Response) => {
 const createChatCommunity = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
-    const { _id } = req.params;
+    //const { _id } = req.params;
     const chats: communitychats= await new CommunityChats({isActive:true})
 
-    if (chats.name == data.name && chats.community_id.toString() == _id) {
+    if (chats.name == data.name && chats.community_id.toString() == data.communityid) {
         res.status(400).send({
         ok: true,
         mensaje: "Nombre para chat no disponible",
@@ -343,7 +380,7 @@ const createChatCommunity = async (req: Request, res: Response) => {
     }
     else
     {
-    const create: communitychats = await new CommunityChats({...data, communityid:_id });
+    const create: communitychats = await new CommunityChats({...data });
 
     await create.save();
 
@@ -372,15 +409,15 @@ const joinChatCommunity = async (req: Request, res: Response) => {
     const community: community | null= await Community.findById({ _id});
     const chat : communitychats| null= await CommunityChats.findById({_id: data.chatID});
     const user = await User.findOne({ _id: data.userID });
- 
-    if (!community?.members_id.find(user?._id)) {
+
+    if (!community.members_id.includes(user._id)) {
       res.status(400).send({
         ok: true,
         mensaje: "Debes pertenecer a la comunidad para unirte al chat",
         message: "You must belong to the community to join the chat",
       });
     } else {
-      const join = await chat?.updateOne({ $push: { member_id: user?._id } });
+      const join = await chat?.updateOne({ $push: { members_id: user?._id } });
 
       res.status(200).send({
         ok: true,
@@ -396,8 +433,10 @@ const joinChatCommunity = async (req: Request, res: Response) => {
       error,
       mensaje: "¡Ups! Algo salió mal",
       message: "Ups! Something went wrong",
+      
     });
   }
+
 };
 
 const leaveChatCommunity = async (req: Request, res: Response) => {
@@ -408,7 +447,7 @@ const leaveChatCommunity = async (req: Request, res: Response) => {
 
     const user = await User.findById({ _id: data.userID });
 
-    const join = await chat?.updateOne({ $pull: { member_id: user?._id } });
+    const join = await chat?.updateOne({ $pull: { members_id: user?._id } });
 
     res.status(200).send({
       ok: true,

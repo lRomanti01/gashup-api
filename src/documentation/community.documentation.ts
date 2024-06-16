@@ -32,11 +32,13 @@
      *                type: string
      *                default: ''
      *              communityCategory_id:
-     *                type: string
+     *                type: array
      *                default: ''
      *     responses:
      *      201:
      *        description: se creo la comunidad correctamente
+     *      404:
+     *        description: usuario o comunidad no encontrados
      *      500:
      *         description: server err
      */
@@ -48,11 +50,6 @@
  *     tags:
  *       - Community
  *     summary: crear un chat en la comunidad
- *     parameters:
- *       - name: _id
- *         in: path
- *         required: true
- *         description: ID de la comunidad a actualizar
  *     requestBody:
  *       required: true
  *       content:
@@ -123,13 +120,13 @@
 
     /** joinCommunity
  * @openapi
- * /api/community/joinCommunity:
+ * '/api/community/joinCommunity/:_id':
  *   post:
  *     tags:
  *       - Community
  *     summary: unirse a una comunidad
  *     parameters:
- *       - name: _id
+ *       - name: id
  *         in: path
  *         required: true
  *         description: ID de la comunidad 
@@ -155,16 +152,16 @@
 /** PUT Methods */
     /** updateCommunity
      * @openapi
-     * '/api/community/updateCommunity':
+     * '/api/community/updateCommunity/:id':
      *  put:
      *     tags:
      *     - Community
      *     summary: actualizar datos de una comunidad
      *     parameters:
      *     - name: _id
-     *     - in: path
-     *     - required: true
-     *     - description: ID de la comunidad a actualizar
+     *       in: path
+     *       required: true
+     *       description: ID de la comunidad a actualizar
      *     requestBody:
      *      required: true
      *      content:

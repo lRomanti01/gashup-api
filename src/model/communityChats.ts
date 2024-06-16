@@ -3,7 +3,7 @@ import mongoose, { Schema, model, Types} from "mongoose";
 export interface communitychats extends mongoose.Document {
   community_id: Types.ObjectId;
   chatOwner_id: Types.ObjectId;
-  member_id: Array<Types.ObjectId>;
+  members_id: Array<Types.ObjectId>;
   name: string;
   img: string;
   isDeleted: boolean;
@@ -22,10 +22,10 @@ const communitychatsSchema = new Schema({
     ref: "User",
     require: true,
   },
-  member_id: {
-    type: Schema.Types.ObjectId,
+  members_id: {
+    type: Array<Schema.Types.ObjectId>,
     ref: "User",
-    require: true,
+    require: false,
   },
   name: {
     type: String,
