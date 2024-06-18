@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import User, { user } from "../model/user";
 import Roles, { role } from "../model/role";
 import { encrypt } from "../helper/password-bcrypts";
+import {guardarImagen } from "./uploadImage";
+
 
 const createUser = async (req: Request, res: Response) => {
   try {
@@ -11,8 +13,10 @@ const createUser = async (req: Request, res: Response) => {
     data.password = encrypts;
 
     const role = await Roles.findOne({ code: data.code });
+    guardarImagen(req)
+    const img = await guardarImagen(req);
 
-    const create: user = await new User({ ...data, role: role?._id });
+    const create: user = await new User({ ...data, role: role?._id, img:img });
     await create.save();
 
     res.status(201).send({
@@ -59,9 +63,13 @@ const updateUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { ...data } = req.body;
 
+    guardarImagen(req)
+    const img = await guardarImagen(req);
+
+
     const user: user | null = await User.findByIdAndUpdate(
       id,
-      { ...data },
+      { ...data, img:img },
       { new: true }
     );
 

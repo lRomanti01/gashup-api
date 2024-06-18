@@ -5,7 +5,6 @@ import User, { user } from "../model/user";
 import CommunityCategory,{communitycategory} from "../model/communityCategory";
 import {guardarImagen } from "./uploadImage";
 import communityCategory from "../model/communityCategory";
-const mongoose = require('mongoose');
 
 
 
@@ -66,12 +65,52 @@ const getCommunities = async (req: Request, res: Response) => {
   try {
     const commmunity = await Community.find({ isActive: true });
 
+    
+
     res.status(200).send({
       ok: true,
       data: commmunity,
       mensaje: "todas las comunidades",
       message: "all communities",
     });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+      error,
+    });
+  }
+};
+
+const getCommunity = async (req: Request, res: Response) => {
+  try {
+    const {_id}=req.params
+    const {...data}= req.body;
+    const commmunity = await Community.findById({ _id });
+    const user = await User.findOne({ _id: data.userID });
+
+    if(commmunity.bannedUsers_id.includes(user._id))
+      {
+        res.status(418).send({
+          ok: false,
+          data: commmunity,
+          mensaje: "usuario baneado",
+          message: "User banned",
+
+      })
+    }
+    else
+    {
+
+    res.status(200).send({
+      ok: true,
+      data: commmunity,
+      mensaje: "todas las comunidades",
+      message: "all communities",
+    });
+  }
+
   } catch (error) {
     console.log(error);
     res.status(500).send({
@@ -100,7 +139,9 @@ const updateCommunity = async (req: Request, res: Response) => {
           }
         else
         {
-          const communityUpdate: community | null = await Community.findByIdAndUpdate(_id,{ ...data },{ new: true });
+          guardarImagen(req)
+          const img = await guardarImagen(req);
+          const communityUpdate: community | null = await Community.findByIdAndUpdate(_id,{ ...data, img:img },{ new: true });
           res.status(200).send
           ({
             ok: true,
@@ -137,9 +178,9 @@ const deleteCommunity = async (req: Request, res: Response) => {
     const {...data}= req.body;
     const community: community | null = await Community.findById({_id });
     const owner: user | null = await User.findById(data.ownerID);
-    if(community?.owner_id== owner?._id)
+    console.log( community.owner_id, "bueno", owner._id)
+    if(community.owner_id.equals(owner._id))
       {
-
         if(!community || community.isActive==false){
           res.status(404).json({
             ok: false,
@@ -171,6 +212,31 @@ const deleteCommunity = async (req: Request, res: Response) => {
     });
   }
    
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      ok: false,
+      error,
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+    });
+  }
+};
+
+const leaveCommunity = async (req: Request, res: Response) => {
+  try {
+    const { ...data } = req.body;
+    const { _id } = req.params;
+    const commmunity: community | null= await Community.findById( _id );
+    const user = await User.findOne({ _id: data.userID });
+    const join = await commmunity?.updateOne({ $pull: { members_id: user?._id } });
+
+    res.status(200).send({
+      ok: true,
+      join,
+      mensaje: "dejaste la comunidad con exito",
+      message: "You leave the community successfully",
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -215,7 +281,7 @@ const joinCommunity = async (req: Request, res: Response) => {
 
     if (community && member) {
       if (community.bannedUsers_id.includes(member._id)) {
-        res.status(200).send({
+        res.status(418).send({
           ok: true,
           mensaje: "Estás baneado de esta comunidad",
           message: "You are banned from this community",
@@ -254,15 +320,19 @@ const banFromCommunity = async (req: Request, res: Response) => {
     const { ...data } = req.body;
     const { _id } = req.params;
     const community: community | null = await Community.findById({_id});
-    const user = await User.findOne({ _id: data.userID});
-    const bannedEmail = await User.findOne({ _id: data.bannedID });
+    const user = await User.findOne({_id:data.userID});
+    const banned = await User.findOne({ _id: data.bannedID });
+
+    console.log(user?._id)
+    console.log(banned._id)
+    console.log(community?.owner_id)
 
     if (
-      community?.owner_id == user?._id ||community?.admins_id.find(user?._id))
+      community?.owner_id.equals(user?._id) ||community?.admins_id.includes(user?._id))
       {
       const ban = await community?.updateOne({
-        $push: { bannedUsers_id: bannedEmail?._id },
-        $pull: { members_id: bannedEmail?._id },
+        $push: { bannedUsers_id: banned?._id },
+        $pull: { members_id: banned?._id },
       });
 
       res.status(200).send({
@@ -330,15 +400,12 @@ const assignAdmins = async (req: Request, res: Response) => {
     });
   }
 };
-
-
-
 const getCommunityChats = async (req: Request, res: Response) => {
   try {
     const {_id}= req.params;
     const community: community | null = await Community.findById({ _id });
     if(community?.isActive==true){
-    const chats = await Community.find({community_id: community._id });
+    const chats = await CommunityChats.find({community_id: community._id });
 
     res.status(200).send({
       ok: true,
@@ -367,7 +434,6 @@ const getCommunityChats = async (req: Request, res: Response) => {
 const createChatCommunity = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
-    //const { _id } = req.params;
     const chats: communitychats= await new CommunityChats({isActive:true})
 
     if (chats.name == data.name && chats.community_id.toString() == data.communityid) {
@@ -380,7 +446,9 @@ const createChatCommunity = async (req: Request, res: Response) => {
     }
     else
     {
-    const create: communitychats = await new CommunityChats({...data });
+      guardarImagen(req)
+      const img = await guardarImagen(req);
+    const create: communitychats = await new CommunityChats({...data, img:img});
 
     await create.save();
 
@@ -444,9 +512,7 @@ const leaveChatCommunity = async (req: Request, res: Response) => {
     const { ...data } = req.body;
     const { _id } = req.params;
     const chat: communitychats | null= await CommunityChats.findById( _id );
-
-    const user = await User.findById({ _id: data.userID });
-
+    const user = await User.findOne({ _id: data.userID });
     const join = await chat?.updateOne({ $pull: { members_id: user?._id } });
 
     res.status(200).send({
@@ -468,12 +534,11 @@ const leaveChatCommunity = async (req: Request, res: Response) => {
 const deleteCommunityChat = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
-    const { ...data } = req.params;
+    const { ...data } = req.body;
     const chat: communitychats | null= await CommunityChats.findById({_id})
-    const owner: user | null = await User.findById(data.ownerID);
+    const owner = await User.findOne({ _id: data.ownerID });
   
-  
-    if(!chat){
+    if(chat.isActive==false){
       res.status(400).json({
         ok: false,
         mensaje: "no se encontro el chat",
@@ -482,13 +547,12 @@ const deleteCommunityChat = async (req: Request, res: Response) => {
     }
     else
     {
-      if(chat?.chatOwner_id== owner?._id)
+      if(chat?.chatOwner_id.equals(owner?._id))
         {
-      const communityDelete: community | null = await Community.findByIdAndUpdate(
+      const communityDelete: communitychats | null = await CommunityChats.findByIdAndUpdate(
         chat._id,
         { isDeleted: true, isActive: false },
-        { new: true });
-  
+        { new: true });  
       res.status(200).send({
         ok: true,
         communityDelete,
@@ -533,8 +597,11 @@ const updateCommunityChat = async (req: Request, res: Response) => {
     }
     else
     {
+      guardarImagen(req)
+      const img = await guardarImagen(req);
+
     const communityUpdate: communitychats | null = await CommunityChats.findByIdAndUpdate(_id,
-      { ...data },
+      { ...data, img: img },
       { new: true }
     );
     res.status(200).send({
@@ -559,8 +626,10 @@ export {
   getCommunitiesForCategories,
   createCommunity,
   getCommunities,
+  getCommunity,
   updateCommunity,
   deleteCommunity,
+  leaveCommunity,
   joinCommunity,
   assignAdmins,
   banFromCommunity,
