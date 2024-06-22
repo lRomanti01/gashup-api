@@ -10,20 +10,18 @@ const createPost = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
 
-    // guardarImagenes(req);
     const img = await guardarImagenes(req);
 
-    console.log(data);
-    // const create: post = await new Post({
-    //   ...data,
-    //   img,
-    //   postDate: moment().format("YYYY-MM-DD HH:mm:ss"),
-    // });
-    // await create.save();
+    const create: post = await new Post({
+      ...data,
+      img,
+      postDate: moment().format("YYYY-MM-DD HH:mm:ss"),
+    });
+    await create.save();
 
     res.status(201).send({
       ok: true,
-      // post: create,
+      post: create,
       mensaje: "Post creado con éxito",
       message: "post created successfully",
     });

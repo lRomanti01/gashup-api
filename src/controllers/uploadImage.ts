@@ -23,6 +23,7 @@ async function guardarImagenes(req: Request): Promise<string[]> {
       })
     );
 
+    console.log(req.files)
     return urls;
   } catch (error) {
     console.error("Error al guardar las imágenes:", error);
