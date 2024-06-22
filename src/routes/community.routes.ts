@@ -1,27 +1,35 @@
 import * as community from '../controllers/community.controller'
-import express = require('express');
+import express from "express";
+import{upload} from '../multer'
+
 
 const communityRouter: express.Router = express.Router();
 
 //post
-communityRouter.post('/createChatCommunity', community.createChatCommunity)
-communityRouter.post("/createCommunity", community.createCommunity);
-
-///delete
-communityRouter.delete("/deleteCommunity/:communityName", community.deleteCommunity);
-communityRouter.delete("/banFromCommunity/:communityName", community.banFromCommunity);
-communityRouter.delete("/leaveChatCommunity/:communityName", community.leaveChatCommunity);
+communityRouter.post("/createChatCommunity", upload.single('img'), community.createChatCommunity)
+communityRouter.post("/createCommunity", upload.single('img'), community.createCommunity);
+communityRouter.post("/joinChatCommunity/:_id", community.joinChatCommunity)
+communityRouter.post("/joinCommunity/:_id", community.joinCommunity);
 
 //put
-communityRouter.put("/updateCommunity/:_id", community.updateCommunity);
-communityRouter.put("/assignAdmins/:communityName", community.assignAdmins);
+communityRouter.put("/updateCommunity/:_id", upload.single('img'), community.updateCommunity);
+communityRouter.put("/assignAdmins/:_id", community.assignAdmins);
+communityRouter.put("/updateCommunityChat/:_id", upload.single('img'), community.updateCommunityChat);
 
+///delete
+communityRouter.delete("/deleteCommunity/:_id", community.deleteCommunity);
+communityRouter.delete("/banFromCommunity/:_id", community.banFromCommunity);
+communityRouter.delete("/leaveCommunity/:_id", community.leaveCommunity);
+communityRouter.delete("/leaveChatCommunity/:_id", community.leaveChatCommunity);
+communityRouter.delete("/deleteCommunityChat/:_id", community.deleteCommunityChat);
 
 //get
-communityRouter.get('/getcommunities/', community.getcommunities)
-communityRouter.get("/getcommunitiesForCategories", community.getcommunitiesForCategories);
-communityRouter.get('/joinChatCommunity/:communityName', community.joinChatCommunity)
-communityRouter.get("/joinCommunity/:communityName", community.joinCommunity);
+communityRouter.get("/getCommunities/", community.getCommunities)
+communityRouter.get("/getCommunity/_id", community.getCommunity)
+communityRouter.get("/getCommunitiesForCategories", community.getCommunitiesForCategories);
+communityRouter.get("/getCommunityChats/:_id", community.getCommunityChats);
+
+
 
 
 

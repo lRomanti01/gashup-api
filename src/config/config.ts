@@ -1,20 +1,19 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from '@firebase/firestore';
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/firestore';
+import { getStorage } from 'firebase/storage';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAOTM970gksYH_jzprHtlwtC4GEUnclZlY",
-    authDomain: "test-e87b5.firebaseapp.com",
-    projectId: "test-e87b5",
-    storageBucket: "test-e87b5.appspot.com",
-    messagingSenderId: "459982675800",
-    appId: "1:459982675800:web:a71b4eaea1a31e56048f2d",
-};
+    apiKey: "AIzaSyAmJU1PIycZAoBFXBoRiaeoBMQR6XMic5I",
+    authDomain: "gashup-72fc2.firebaseapp.com",
+    projectId: "gashup-72fc2",
+    storageBucket: "gashup-72fc2.appspot.com",
+    messagingSenderId: "307691557828",
+    appId: "1:307691557828:web:b5737c3d6de79596cfca91",
+    measurementId: "G-33ZHY3MPZH"
+  };
 
-firebase.initializeApp(firebaseConfig);
-const dbf = getFirestore();
+const firebaseApp = initializeApp(firebaseConfig);
+const storage = getStorage(firebaseApp);
+const firestore = getFirestore(firebaseApp);
 
-export { dbf, firebase };
-
-
+export { firebaseApp, storage, firestore };

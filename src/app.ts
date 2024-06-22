@@ -7,10 +7,12 @@ import router from "./routes";
 import swaggerSpec from "./swagger"
 import swaggerUi from "swagger-ui-express"
 
+
 const app: express.Application = express();
 
 dbConnection();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 //CORS
 app.use(cors());
