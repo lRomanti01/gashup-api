@@ -6,15 +6,14 @@ interface ImageUrls {
   imgUrls: string[];
   bannerUrl: string | null;
 }
-
 async function guardarImagenes(req: Request): Promise<ImageUrls> {
   try {
-    if (!req.files) {
-      throw new Error('No se encontraron archivos para cargar');
-    }
+    const files = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
 
-    const imgFiles = req.files['img'];
-    const bannerFile = req.files['banner'];
+    const imgFiles = files['img'] || [];
+    const bannerFiles = files['banner'] || [];
 
     const imgUrls = await Promise.all(imgFiles.map(async (file) => {
       const fileName = file.originalname;
@@ -29,7 +28,8 @@ async function guardarImagenes(req: Request): Promise<ImageUrls> {
     }));
 
     let bannerUrl: string | null = null;
-    if (bannerFile) {
+    if (bannerFiles.length > 0) {
+      const bannerFile = bannerFiles[0];
       const fileName = bannerFile.originalname;
       const storageRef = ref(storage, fileName);
 

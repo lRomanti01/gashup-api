@@ -19,17 +19,13 @@ const createUser = async (req: Request, res: Response) => {
     const img = (await guardarImagenes(req)).imgUrls;
     const banner = (await guardarImagenes(req)).bannerUrl;
 
-    create= await new User({ ...data, role: role?._id, img:img, banner: banner});
+    create= await new User({ ...data, role: role?._id, img:img[0], banner: banner});
     await create.save();
     }
     else{       
     create= await new User({ ...data, role: role?._id});
     await create.save();
   }
-   
-
-      
-
     res.status(201).send({
       ok: true,
       create,
