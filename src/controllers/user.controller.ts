@@ -11,17 +11,27 @@ const createUser = async (req: Request, res: Response) => {
 
     const encrypts = await encrypt(data.password);
     data.password = encrypts;
-
+    let create= await new User();
     const role = await Roles.findOne({ code: data.code });
+    
+    if(req.file)
+    {
     guardarImagen(req)
     const img = await guardarImagen(req);
-
-    const create: user = await new User({ ...data, role: role?._id, img:img });
+    create= await new User({ ...data, role: role?._id, img:img });
     await create.save();
+    }
+    else{       
+    create= await new User({ ...data, role: role?._id});
+    await create.save();
+  }
+   
+
+      
 
     res.status(201).send({
       ok: true,
-      user: create,
+      create,
       mensaje: "Usuario creado con éxito",
       message: "user created successfully",
     });

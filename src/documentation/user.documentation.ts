@@ -39,8 +39,8 @@
  *                 type: string
  *                 default: ''
  *     responses:
- *       201:
- *         description: Mensaje; se envio correo para validar
+ *       200:
+ *         description: se envio correo para validar
  *       500:
  *         description: error del servidor
  */
