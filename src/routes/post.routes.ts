@@ -5,7 +5,7 @@ import { upload } from "../multer";
 const postRouter: express.Router = express.Router();
 
 //post
-postRouter.post("/createPost", upload.array('img'), post.createPost);
+postRouter.post("/createPost", upload, post.createPost);
 
 //get
 postRouter.get("/getAllPostByCommunity/:community_id", post.getAllPostByCommunity);

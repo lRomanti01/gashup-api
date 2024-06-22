@@ -6,11 +6,13 @@ export interface user extends mongoose.Document {
     phone: string;
     password: string;
     img: string;
+    banner: string;
     isActive: boolean;
     isDeleted: boolean;
     created_at: string;
     updated_at: string;
     role: Types.ObjectId;
+
 }
 
 const userSchema = new Schema({
@@ -32,6 +34,11 @@ const userSchema = new Schema({
         require: true,
     },
     img: {
+        type: String,
+        require: false,
+        default: '',
+    },
+    banner: {
         type: String,
         require: false,
         default: '',

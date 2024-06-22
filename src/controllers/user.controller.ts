@@ -13,11 +13,13 @@ const createUser = async (req: Request, res: Response) => {
     let create= await new User();
     const role = await Roles.findOne({ code: data.code });
     
-    if(req.file)
+    if(req.files)
     {
     guardarImagenes(req)
-    const img = await guardarImagenes(req);
-    create= await new User({ ...data, role: role?._id, img:img });
+    const img = (await guardarImagenes(req)).imgUrls;
+    const banner = (await guardarImagenes(req)).bannerUrl;
+
+    create= await new User({ ...data, role: role?._id, img:img, banner: banner});
     await create.save();
     }
     else{       

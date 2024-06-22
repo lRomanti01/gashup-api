@@ -2,11 +2,8 @@ import { Request, Response } from "express";
 import Community, { community } from "../model/community";
 import CommunityChats, { communitychats } from "../model/communityChats";
 import User, { user } from "../model/user";
-import CommunityCategory, {
-  communitycategory,
-} from "../model/communityCategory";
+import CommunityCategory, {communitycategory,} from "../model/communityCategory";
 import { guardarImagenes } from "./uploadImage";
-import communityCategory from "../model/communityCategory";
 
 const createCommunity = async (req: Request, res: Response) => {
   try {

@@ -6,6 +6,7 @@ export interface community extends mongoose.Document {
     owner_id: Types.ObjectId;
     description: string;
     img: string;
+    banner: string;
     members_id: Array<Types.ObjectId>;
     admins_id: Array<Types.ObjectId>;
     isDeleted: boolean;
@@ -30,6 +31,9 @@ const communitySchema = new Schema({
         require: false,
     },
     img: {
+        type: String,
+    },
+    banner: {
         type: String,
     },
     members_id: {

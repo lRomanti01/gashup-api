@@ -2,31 +2,49 @@ import { storage } from "../config/config";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { Request } from "express";
 
-async function guardarImagenes(req: Request): Promise<string[]> {
+interface ImageUrls {
+  imgUrls: string[];
+  bannerUrl: string | null;
+}
+
+async function guardarImagenes(req: Request): Promise<ImageUrls> {
   try {
-    if (!req.files || !Array.isArray(req.files)) {
-      throw new Error("No se encontraron archivos para cargar");
+    if (!req.files) {
+      throw new Error('No se encontraron archivos para cargar');
     }
 
-    const files = req.files;
-    const urls = await Promise.all(
-      files.map(async (file) => {
-        const fileName = file.originalname;
-        const storageRef = ref(storage, fileName);
+    const imgFiles = req.files['img'];
+    const bannerFile = req.files['banner'];
 
-        await uploadBytes(storageRef, file.buffer, {
-          contentType: file.mimetype,
-        });
+    const imgUrls = await Promise.all(imgFiles.map(async (file) => {
+      const fileName = file.originalname;
+      const storageRef = ref(storage, fileName);
 
-        const url = await getDownloadURL(storageRef);
-        return url;
-      })
-    );
+      await uploadBytes(storageRef, file.buffer, {
+        contentType: file.mimetype
+      });
 
-    return urls;
+      const url = await getDownloadURL(storageRef);
+      return url;
+    }));
+
+    let bannerUrl: string | null = null;
+    if (bannerFile) {
+      const fileName = bannerFile.originalname;
+      const storageRef = ref(storage, fileName);
+
+      await uploadBytes(storageRef, bannerFile.buffer, {
+        contentType: bannerFile.mimetype
+      });
+
+      bannerUrl = await getDownloadURL(storageRef);
+    }
+
+    return { imgUrls, bannerUrl };
   } catch (error) {
-    console.error("Error al guardar las imágenes:", error);
+    console.error('Error al guardar las imágenes:', error);
     throw error;
   }
 }
+
 export { guardarImagenes };

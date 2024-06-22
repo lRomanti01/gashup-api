@@ -17,6 +17,7 @@
  *               - phone
  *               - code
  *               - img
+ *               - banner
  *               - password
  *               - email
  *             properties:
@@ -30,6 +31,9 @@
  *                 type: string
  *                 default: ''
  *               img:
+ *                 type: string
+ *                 format: binary
+ *               banner:
  *                 type: string
  *                 format: binary
  *               password:

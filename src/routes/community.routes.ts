@@ -6,15 +6,15 @@ import{upload} from '../multer'
 const communityRouter: express.Router = express.Router();
 
 //post
-communityRouter.post("/createChatCommunity", upload.single('img'), community.createChatCommunity)
-communityRouter.post("/createCommunity", upload.single('img'), community.createCommunity);
+communityRouter.post("/createChatCommunity", upload, community.createChatCommunity)
+communityRouter.post("/createCommunity", upload, community.createCommunity);
 communityRouter.post("/joinChatCommunity/:_id", community.joinChatCommunity)
 communityRouter.post("/joinCommunity/:_id", community.joinCommunity);
 
 //put
-communityRouter.put("/updateCommunity/:_id", upload.single('img'), community.updateCommunity);
+communityRouter.put("/updateCommunity/:_id", upload, community.updateCommunity);
 communityRouter.put("/assignAdmins/:_id", community.assignAdmins);
-communityRouter.put("/updateCommunityChat/:_id", upload.single('img'), community.updateCommunityChat);
+communityRouter.put("/updateCommunityChat/:_id", upload, community.updateCommunityChat);
 
 ///delete
 communityRouter.delete("/deleteCommunity/:_id", community.deleteCommunity);

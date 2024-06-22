@@ -13,7 +13,7 @@ const createPost = async (req: Request, res: Response) => {
     // guardarImagenes(req);
     const img = await guardarImagenes(req);
 
-    console.log(data);
+    console.log(img);
     // const create: post = await new Post({
     //   ...data,
     //   img,
