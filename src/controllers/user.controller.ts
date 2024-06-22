@@ -2,8 +2,7 @@ import { Request, Response } from "express";
 import User, { user } from "../model/user";
 import Roles, { role } from "../model/role";
 import { encrypt } from "../helper/password-bcrypts";
-import {guardarImagen } from "./uploadImage";
-
+import { guardarImagenes } from "./uploadImage";
 
 const createUser = async (req: Request, res: Response) => {
   try {
@@ -16,8 +15,8 @@ const createUser = async (req: Request, res: Response) => {
     
     if(req.file)
     {
-    guardarImagen(req)
-    const img = await guardarImagen(req);
+    guardarImagenes(req)
+    const img = await guardarImagenes(req);
     create= await new User({ ...data, role: role?._id, img:img });
     await create.save();
     }
@@ -73,13 +72,12 @@ const updateUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { ...data } = req.body;
 
-    guardarImagen(req)
-    const img = await guardarImagen(req);
-
+    guardarImagenes(req);
+    const img = await guardarImagenes(req);
 
     const user: user | null = await User.findByIdAndUpdate(
       id,
-      { ...data, img:img },
+      { ...data, img: img },
       { new: true }
     );
 
