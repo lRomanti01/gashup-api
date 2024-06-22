@@ -1,13 +1,14 @@
 import mongoose, { Schema, model, Types } from "mongoose";
 
 export interface post extends mongoose.Document {
-  typePost_id:Types.ObjectId;
+  typePost_id: Types.ObjectId;
   title: string;
   description: string;
   community_id: Types.ObjectId;
   user_id: Types.ObjectId;
   user_likes: Array<Types.ObjectId>;
   code: string;
+  postDate: string;
 }
 
 const postSchema = new Schema({
@@ -37,9 +38,13 @@ const postSchema = new Schema({
   user_likes: {
     type: Array<Schema.Types.ObjectId>,
     ref: "User",
-    require: true,
+    require: false,
   },
   code: {
+    type: String,
+    require: true,
+  },
+  postDate: {
     type: String,
     require: true,
   },

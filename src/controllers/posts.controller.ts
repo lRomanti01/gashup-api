@@ -2,17 +2,28 @@ import { Request, Response } from "express";
 import User, { user } from "../model/user";
 import Roles, { role } from "../model/role";
 import Post, { post } from "../model/post";
+import { guardarImagenes } from "./uploadImage";
+import { calculateElapsedTime } from "../helper/date";
+import moment from "moment";
 
 const createPost = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
 
-    const create: post = await new Post({ ...data });
-    await create.save();
+    // guardarImagenes(req);
+    const img = await guardarImagenes(req);
+
+    console.log(data);
+    // const create: post = await new Post({
+    //   ...data,
+    //   img,
+    //   postDate: moment().format("YYYY-MM-DD HH:mm:ss"),
+    // });
+    // await create.save();
 
     res.status(201).send({
       ok: true,
-      post: create,
+      // post: create,
       mensaje: "Post creado con éxito",
       message: "post created successfully",
     });
@@ -31,6 +42,11 @@ const getAllPostByCommunity = async (req: Request, res: Response) => {
   try {
     const { community_id } = req.params;
     const posts = await Post.find({ community_id }).populate("community");
+
+    const mappedPosts = posts.map((item) => ({
+      ...item,
+      postDate: calculateElapsedTime(item.postDate),
+    }));
 
     res.status(200).send({
       ok: true,
