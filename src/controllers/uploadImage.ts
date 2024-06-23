@@ -47,4 +47,4 @@ async function guardarImagenes(req: Request): Promise<ImageUrls> {
   }
 }
 
-export { guardarImagenes}
+export { guardarImagenes};

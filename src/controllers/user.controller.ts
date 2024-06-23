@@ -23,10 +23,12 @@ const createUser = async (req: Request, res: Response) => {
     }
 
     const img = await guardarImagenes(req);
+    const { imgUrls } = img;
+
     create = await new User({
       ...data,
       role: role?._id,
-      img: img[0] ? img[0] : null,
+      img: imgUrls[0] ? imgUrls[0] : null,
     });
     await create.save();
 
