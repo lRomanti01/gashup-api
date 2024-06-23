@@ -9,6 +9,7 @@ export interface post extends mongoose.Document {
   user_likes: Array<Types.ObjectId>;
   code: string;
   postDate: string;
+  images: Array<string>
 }
 
 const postSchema = new Schema({

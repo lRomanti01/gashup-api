@@ -12,6 +12,7 @@ const createUser = async (req: Request, res: Response) => {
     data.password = encrypts;
     let create= await new User();
     const role = await Roles.findOne({ code: data.code });
+<<<<<<< HEAD
     
     if(req.files)
     {
@@ -26,6 +27,28 @@ const createUser = async (req: Request, res: Response) => {
     create= await new User({ ...data, role: role?._id});
     await create.save();
   }
+=======
+    const user = await User.findOne({ email: data.email });
+
+    if (user) {
+      return res.status(401).send({
+        ok: false,
+        mensaje: "Este usuario ya existe",
+        message: "This user already exists",
+      });
+    }
+
+    const img = await guardarImagenes(req);
+    const { imgUrls } = img;
+
+    create = await new User({
+      ...data,
+      role: role?._id,
+      img: imgUrls[0] ? imgUrls[0] : null,
+    });
+    await create.save();
+
+>>>>>>> main
     res.status(201).send({
       ok: true,
       create,
