@@ -12,22 +12,6 @@ const createUser = async (req: Request, res: Response) => {
     data.password = encrypts;
     let create= await new User();
     const role = await Roles.findOne({ code: data.code });
-<<<<<<< HEAD
-    
-    if(req.files)
-    {
-    guardarImagenes(req)
-    const img = (await guardarImagenes(req)).imgUrls;
-    const banner = (await guardarImagenes(req)).bannerUrl;
-
-    create= await new User({ ...data, role: role?._id, img:img[0], banner: banner});
-    await create.save();
-    }
-    else{       
-    create= await new User({ ...data, role: role?._id});
-    await create.save();
-  }
-=======
     const user = await User.findOne({ email: data.email });
 
     if (user) {
@@ -48,7 +32,6 @@ const createUser = async (req: Request, res: Response) => {
     });
     await create.save();
 
->>>>>>> main
     res.status(201).send({
       ok: true,
       create,
