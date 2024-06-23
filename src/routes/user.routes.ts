@@ -7,14 +7,14 @@ import{upload} from '../multer'
 
 const userRouter: express.Router = express.Router();
 
-userRouter.post('/createUser', upload.single('img'), [
+userRouter.post('/createUser', upload, [
     check('name', 'the name is required').not().isEmpty(),
     check('code', 'the code is required').not().isEmpty(),
 ], user.createUser
 )
 
 userRouter.get('/getUserByRol/:code', user.getUserByRol)
-userRouter.put("/updateUser/:id", upload.single('img'), user.updateUser);
+userRouter.put("/updateUser/:id", upload, user.updateUser);
 userRouter.delete("/deleteUser/:id", user.deleteUser);
 
 
