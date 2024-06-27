@@ -10,7 +10,7 @@ const createUser = async (req: Request, res: Response) => {
 
     const encrypts = await encrypt(data.password);
     data.password = encrypts;
-    let create= await new User();
+    let create = await new User();
     const role = await Roles.findOne({ code: data.code });
     const user = await User.findOne({ email: data.email });
 
@@ -129,4 +129,83 @@ const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
-export { createUser, getUserByRol, updateUser, deleteUser };
+const follow= async (req, res)=>
+  {
+    try
+        {
+         const {id}= req.params;
+         const {...data}= req.body;
+         const user= await User.findById(id);//usuario logeado
+         const userToFollow= await User.findById(data.userToFollow);//la persona que quiero seguir
+         if(!user.followed.includes(userToFollow._id))
+            {
+               await user.updateOne({$push:{followed:userToFollow._id}});
+               await userToFollow.updateOne({$push:{followers: id}});
+                res.status(200).json(
+                {
+                 ok: true,
+                 mensaje: "empezaste a seguir a este usuario",
+                 message: "you started following this user",
+                });
+            }
+          else{
+                res.status(403).json({
+                ok: false,
+                mensaje: "ya sigues a este usuario",
+                message: "you already follow this user",
+                    });
+              }
+        }catch (error) {
+          console.log(error);
+          res.status(500).json({
+            ok: false,
+            error,
+            mensaje: "¡Ups! Algo salió mal",
+            message: "Ups! Something went wrong",
+          });
+        }
+  
+  }
+  
+  
+      
+  const unfollow= async (req, res)=>
+    {
+      try
+          {
+           const {id}= req.params;
+           const {...data}= req.body;
+           const user= await User.findById(id);//usuario logeado
+           const userToFollow= await User.findById(data.userToFollow);//la persona que quiero dejar de seguir
+           if(!user.followed.includes(userToFollow._id))
+              {
+                 await user.updateOne({$pull:{followed:userToFollow._id}});
+                 await userToFollow.updateOne({$pull:{followers:id}});
+                  res.status(200).json(
+                  {
+                   ok: true,
+                   mensaje: "dejaste a seguir a este usuario",
+                   message: "you stopped following this user",
+                  });
+              }
+            else{
+                  res.status(403).json({
+                  ok: false,
+                  mensaje: "no sigues a este usuario",
+                  message: "you don't  follow this user",
+                      });
+                }
+          }catch (error) {
+            console.log(error);
+            res.status(500).json({
+              ok: false,
+              error,
+              mensaje: "¡Ups! Algo salió mal",
+              message: "Ups! Something went wrong",
+            });
+          }
+    
+    }
+  
+
+export { createUser, getUserByRol, updateUser, deleteUser, follow,unfollow };

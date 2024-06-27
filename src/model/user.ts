@@ -12,6 +12,8 @@ export interface user extends mongoose.Document {
     created_at: string;
     updated_at: string;
     role: Types.ObjectId;
+    followed: Array<String>;
+    followers: Array<string>;
 
 }
 
@@ -65,6 +67,14 @@ const userSchema = new Schema({
         type: String,
         default: new Date().toISOString(),
         require: true
+    },
+    followed: {
+        type: Array<String>,
+        require: false,
+    },
+    followers: {
+        type: Array<String>,
+        require: false,
     },
     
 });

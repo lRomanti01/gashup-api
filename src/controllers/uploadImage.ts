@@ -8,34 +8,30 @@ interface ImageUrls {
 }
 async function guardarImagenes(req: Request): Promise<ImageUrls> {
   try {
-    const files = req.files as {
-      [fieldname: string]: Express.Multer.File[];
-    };
-
+    const files = req.files as {[fieldname: string]: Express.Multer.File[];};
     const imgFiles = files['img'] || [];
     const bannerFiles = files['banner'] || [];
 
-    const imgUrls = await Promise.all(imgFiles.map(async (file) => {
-      const fileName = file.originalname;
-      const storageRef = ref(storage, fileName);
+    //logica para subir las imagenes a la nube y tomar sus url
+    const imgUrls = await Promise.all(imgFiles.map(async (file) => 
+      {
+        const fileName = file.originalname;
+        const storageRef = ref(storage, fileName);
 
-      await uploadBytes(storageRef, file.buffer, {
-        contentType: file.mimetype
-      });
+        await uploadBytes(storageRef, file.buffer, {contentType: file.mimetype});
 
-      const url = await getDownloadURL(storageRef);
-      return url;
-    }));
+        const url = await getDownloadURL(storageRef);
+        return url;
+      }));
 
+    //logica para subir los banner a la nube y tomar sus url
     let bannerUrl: string | null = null;
     if (bannerFiles.length > 0) {
       const bannerFile = bannerFiles[0];
       const fileName = bannerFile.originalname;
       const storageRef = ref(storage, fileName);
 
-      await uploadBytes(storageRef, bannerFile.buffer, {
-        contentType: bannerFile.mimetype
-      });
+      await uploadBytes(storageRef, bannerFile.buffer, {contentType: bannerFile.mimetype});
 
       bannerUrl = await getDownloadURL(storageRef);
     }

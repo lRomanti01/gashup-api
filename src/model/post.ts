@@ -49,6 +49,7 @@ const postSchema = new Schema({
     type: String,
     require: true,
   },
+
 });
 
 export default model<post>("Post", postSchema);
