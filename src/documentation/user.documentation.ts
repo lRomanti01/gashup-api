@@ -17,6 +17,7 @@
  *               - phone
  *               - code
  *               - img
+ *               - banner
  *               - password
  *               - email
  *             properties:
@@ -32,6 +33,9 @@
  *               img:
  *                 type: string
  *                 format: binary
+ *               banner:
+ *                 type: string
+ *                 format: binary
  *               password:
  *                 type: string
  *                 default: ''
@@ -39,8 +43,8 @@
  *                 type: string
  *                 default: ''
  *     responses:
- *       201:
- *         description: Mensaje; se envio correo para validar
+ *       200:
+ *         description: se envio correo para validar
  *       500:
  *         description: error del servidor
  */
@@ -93,6 +97,72 @@
  *       500:
  *         description: error del servidor
  */
+
+/** follow
+* @openapi
+* '/api/user/follow/:id':
+*  put:
+*     tags:
+*     - Users
+*     summary: seguir a un usuario
+*     parameters:
+*      - name: id 
+*        in: path
+*        description: id del usuario logeado
+*        required: true
+*     requestBody:
+*      required: true
+*      content:
+*        application/json:
+*           schema:
+*            type: object
+*            required:
+*              - userToFollow
+*            properties:
+*              userToFollow:
+*                type: string
+*                default: ''
+*     responses:
+*      200:
+*        description: se siguio al usuario
+*      500:
+*         description: server err
+*      403:
+*         description: ya se sigue al usuario
+*/
+
+/** unfollow
+* @openapi
+* '/api/user/unfollow/:id':
+*  put:
+*     tags:
+*     - Users
+*     summary: dejar de seguir a un usuario
+*     parameters:
+*      - name: id 
+*        in: path
+*        description: id del usuario logeado
+*        required: true
+*     requestBody:
+*      required: true
+*      content:
+*        application/json:
+*           schema:
+*            type: object
+*            required:
+*              - userToFollow
+*            properties:
+*              userToFollow:
+*                type: string
+*                default: ''
+*     responses:
+*      200:
+*        description: se dejo de seguir al usuario
+*      500:
+*         description: server err
+*      403:
+*         description: no sigues sigues a este usuario
+*/
 
 /** DELETE Methods */
 /** deleteUser

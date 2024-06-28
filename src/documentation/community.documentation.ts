@@ -17,6 +17,7 @@
  *              - owner_id
  *              - description
  *              - img
+ *              - banner
  *              - communityCategory_id
  *            properties:
  *              name:
@@ -29,6 +30,9 @@
  *                type: string
  *                default: ''
  *              img:
+ *                type: string
+ *                format: binary
+ *              banner:
  *                type: string
  *                format: binary
  *              communityCategory_id:

@@ -15,7 +15,10 @@ userRouter.post('/createUser', upload, [
 
 userRouter.get('/getUserByRol/:code', user.getUserByRol)
 userRouter.put("/updateUser/:id", upload, user.updateUser);
+userRouter.put("/follow/:id", user.follow);
+userRouter.put("/unfollow/:id", user.unfollow);
 userRouter.delete("/deleteUser/:id", user.deleteUser);
+
 
 
 export default userRouter;
