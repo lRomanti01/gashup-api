@@ -14,7 +14,7 @@ const createUser = async (req: Request, res: Response) => {
     const role = await Roles.findOne({ code: data.code });
     const user = await User.findOne({ email: data.email });
 
-    if (!user) {
+    if (user) {
       return res.status(401).send({
         ok: false,
         mensaje: "Este usuario ya existe",
@@ -23,10 +23,12 @@ const createUser = async (req: Request, res: Response) => {
     }
 
     const img = await guardarImagenes(req);
+    const { imgUrls } = img;
+
     create = await new User({
       ...data,
       role: role?._id,
-      img: img[0] ? img[0] : null,
+      img: imgUrls[0] ? imgUrls[0] : null,
     });
     await create.save();
 
