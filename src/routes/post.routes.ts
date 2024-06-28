@@ -8,7 +8,7 @@ const postRouter: express.Router = express.Router();
 postRouter.post("/createPost", upload.array('img'), post.createPost);
 
 //get
-postRouter.get("/getAllPostByCommunity/:community_id", post.getAllPostByCommunity);
+postRouter.get("/getAllPostByCommunity/:community", post.getAllPostByCommunity);
 
 //put
 postRouter.put("/updatePost/:id", post.updatePost);

@@ -14,7 +14,7 @@ const createPost = async (req: Request, res: Response) => {
 
     const create: post = await new Post({
       ...data,
-      img,
+      images: img.imgUrls,
       postDate: moment().format("YYYY-MM-DD HH:mm:ss"),
     });
     await create.save();
@@ -38,17 +38,20 @@ const createPost = async (req: Request, res: Response) => {
 
 const getAllPostByCommunity = async (req: Request, res: Response) => {
   try {
-    const { community_id } = req.params;
-    const posts = await Post.find({ community_id }).populate("community");
+    const { community } = req.params;
+    const posts = await Post.find({ community })
+      .populate("community")
+      .populate("user")
+      .sort({ postDate: -1 });
 
     const mappedPosts = posts.map((item) => ({
-      ...item,
+      ...item.toObject(), // Convert Mongoose document to plain JavaScript object
       postDate: calculateElapsedTime(item.postDate),
     }));
 
     res.status(200).send({
       ok: true,
-      posts,
+      data: mappedPosts,
       mensaje: "Posts encontrados correctamente",
       message: "Posts found successfully",
     });
