@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import User, { user } from "../model/user";
 import Roles, { role } from "../model/role";
 import { encrypt } from "../helper/password-bcrypts";
-import { guardarImagenes } from "./uploadImage";
+import { guardarImagenes, deleteImage } from "./uploadImage";
 
 const createUser = async (req: Request, res: Response) => {
   try {
@@ -24,11 +24,13 @@ const createUser = async (req: Request, res: Response) => {
 
     const img = await guardarImagenes(req);
     const { imgUrls } = img;
+    const { bannerUrl } = img;
 
     create = await new User({
       ...data,
       role: role?._id,
       img: imgUrls[0] ? imgUrls[0] : null,
+      banner:bannerUrl? bannerUrl:null,
     });
     await create.save();
 
@@ -75,19 +77,31 @@ const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { ...data } = req.body;
-
-    guardarImagenes(req);
+    const user: user= await User.findById(id)
     const img = await guardarImagenes(req);
+    const { imgUrls } = img;
+    const { bannerUrl } = img;
+    let banner;
+    let image;
 
-    const user: user | null = await User.findByIdAndUpdate(
+    if(user.banner==null ){ banner=bannerUrl;}//si no hay banner en firebase
+    else if(req.files['banner'] && user.banner!=bannerUrl){deleteImage(user.banner); banner=bannerUrl;}//si hay banner en firebase
+                
+    if(user.img==null|| user.img.length<2){image=imgUrls[0];} //si no hay img en firebase
+    else if(req.files['img'] && user.img!=imgUrls[0]){deleteImage(user.img);image=imgUrls[0];}//si hay img en firebase
+               
+
+console.log(banner)
+    const update: user | null = await User.findByIdAndUpdate(
       id,
-      { ...data, img: img },
+      { ...data,img: image,
+        banner:banner},
       { new: true }
     );
 
     res.status(200).send({
       ok: true,
-      user,
+      update,
       mensaje: "Usuario actualizado con exito",
       message: "User updated successfully",
     });
@@ -166,10 +180,8 @@ const follow= async (req, res)=>
         }
   
   }
-  
-  
-      
-  const unfollow= async (req, res)=>
+    
+ const unfollow= async (req, res)=>
     {
       try
           {
@@ -205,7 +217,34 @@ const follow= async (req, res)=>
             });
           }
     
-    }
+  }
   
+const getFollowersAndFollowed= async (req, res)=>
+  {
+        try
+            {
+             const {id}= req.params;
+             const user= await User.findById(id);
+             const followers= user.followers
+             const followed= user.followed
 
-export { createUser, getUserByRol, updateUser, deleteUser, follow,unfollow };
+                    res.status(200).json(
+                    {
+                     ok: true,
+                     followers,followed,
+                     mensaje: "seguidores y seguidos",
+                     message: "followwers and followed",
+                    });
+            }catch (error) {
+              console.log(error);
+              res.status(500).json({
+                ok: false,
+                error,
+                mensaje: "¡Ups! Algo salió mal",
+                message: "Ups! Something went wrong",
+              });
+            }
+      
+      }
+
+export { createUser, getUserByRol, updateUser, deleteUser, follow,unfollow, getFollowersAndFollowed};

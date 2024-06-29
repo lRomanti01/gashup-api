@@ -1,5 +1,5 @@
 import { storage } from "../config/config";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { Request } from "express";
 
 interface ImageUrls {
@@ -19,6 +19,7 @@ async function guardarImagenes(req: Request): Promise<ImageUrls> {
         const storageRef = ref(storage, fileName);
 
         await uploadBytes(storageRef, file.buffer, {contentType: file.mimetype});
+        
 
         const url = await getDownloadURL(storageRef);
         return url;
@@ -42,5 +43,15 @@ async function guardarImagenes(req: Request): Promise<ImageUrls> {
     throw error;
   }
 }
+async function deleteImage(imagePath: string): Promise<void> {
+  const imageRef = ref(storage, imagePath);
 
-export { guardarImagenes};
+  try {
+      await deleteObject(imageRef);
+  } catch (error) {
+      throw error;
+  }
+}
+
+
+export { guardarImagenes,deleteImage};

@@ -9,14 +9,17 @@ export interface post extends mongoose.Document {
   user_likes: Array<Types.ObjectId>;
   code: string;
   postDate: string;
-  images: Array<string>
+  img: Array<string>
+  isDeleted: boolean;
+  isActive: boolean;
+  hotScore: number;
 }
 
 const postSchema = new Schema({
   typePost_id: {
     type: Schema.Types.ObjectId,
     ref: "TypePost",
-    require: true,
+    require: false,
   },
   title: {
     type: String,
@@ -49,6 +52,22 @@ const postSchema = new Schema({
     type: String,
     require: true,
   },
+  img: {
+    type: Array<String>,
+    require: true,
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+},
+isActive: {
+    type: Boolean,
+    default: true
+},
+hotScore: {
+  type: Number,
+  default:0
+},
 
 });
 

@@ -3,7 +3,7 @@ import Community, { community } from "../model/community";
 import CommunityChats, { communitychats } from "../model/communityChats";
 import User, { user } from "../model/user";
 import CommunityCategory, {communitycategory,} from "../model/communityCategory";
-import { guardarImagenes } from "./uploadImage";
+import { guardarImagenes, deleteImage } from "./uploadImage";
 
 const createCommunity = async (req: Request, res: Response) => {
   try {
@@ -28,13 +28,16 @@ const createCommunity = async (req: Request, res: Response) => {
         message: "Community name not available",
       });
     } else {
-      guardarImagenes(req);
       const img = await guardarImagenes(req);
+      const { imgUrls } = img;
+      const { bannerUrl } = img;
 
       const create: community = await new Community({
         ...data,
         communityCategory_id: IDs,
-        img: img,
+        img: imgUrls[0] ? imgUrls[0] : null,
+        banner:bannerUrl? bannerUrl:null,
+        
       });
       await create.save();
 
@@ -112,25 +115,33 @@ const updateCommunity = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const { ...data } = req.body;
+    let image;
+    let banner;
     const community: community | null = await Community.findById({ _id });
-
-    if (
+    if (//validacion de permisos para actualizar
       community?.owner_id == data.userID ||
       community?.admins_id == data.userID
     ) {
-      if (!community || community.isActive == false) {
+      if (!community || community.isActive == false) {//validacion de existencia 
         return res.status(400).send({
           ok: false,
           mensaje: "Comunidad no encontrada",
           message: "Community not found",
         });
-      } else {
-        guardarImagenes(req);
+      } else {//si existe
         const img = await guardarImagenes(req);
+        const { imgUrls } = img;
+        const { bannerUrl } = img;
+        if(community.banner==null ){ banner=bannerUrl;}//si no hay banner en firebase
+        else{deleteImage(community.banner); banner=bannerUrl;}//si hay banner en firebase
+      
+        if(community.img==null || community.img.length<2){image=imgUrls[0];} //si no hay img en firebase
+        else{deleteImage(community.img);image=imgUrls[0];}//si hay img en firebase
+
         const communityUpdate: community | null =
           await Community.findByIdAndUpdate(
             _id,
-            { ...data, img: img },
+            { ...data, img: image, banner:banner },
             { new: true }
           );
         res.status(200).send({
@@ -140,7 +151,7 @@ const updateCommunity = async (req: Request, res: Response) => {
           message: "Community updated successfully",
         });
       }
-    } else {
+    } else {//sin permisos
       res.status(400).send({
         ok: true,
         mensaje: "Solo el dueño y los admins pueden actualizar la comunidad",
@@ -435,11 +446,13 @@ const createChatCommunity = async (req: Request, res: Response) => {
         message: "chat name not available",
       });
     } else {
-      guardarImagenes(req);
       const img = await guardarImagenes(req);
+      const { imgUrls } = img;
+      const { bannerUrl } = img;
       const create: communitychats = await new CommunityChats({
         ...data,
-        img: img,
+        img: imgUrls[0] ? imgUrls[0] : null,
+        banner:bannerUrl[0]? bannerUrl[0]:null,
       });
 
       await create.save();

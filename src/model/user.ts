@@ -5,8 +5,8 @@ export interface user extends mongoose.Document {
     email: string;
     phone: string;
     password: string;
-    img: string;
     banner: string;
+    img: string;
     isActive: boolean;
     isDeleted: boolean;
     created_at: string;
@@ -35,12 +35,12 @@ const userSchema = new Schema({
         type: String,
         require: true,
     },
-    img: {
+    banner: {
         type: String,
         require: false,
         default: '',
     },
-    banner: {
+    img: {
         type: String,
         require: false,
         default: '',
