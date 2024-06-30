@@ -13,13 +13,13 @@ postRouter.post("/responseComment", post.responseComment);
 
 //get
 postRouter.get("/getAllPostByCommunity/:community_id", post.getAllPostByCommunity);
-postRouter.get("/userProfile/_id", post.userProfile);
-postRouter.get("/timeLine/_id", post.timeLine);
+postRouter.get("/userProfile/:_id", post.userProfile);
+postRouter.get("/timeLine/:_id", post.timeLine);
 
 
 //put
 postRouter.put("/updatePost/:id", post.updatePost);
-postRouter.put("/like/_id", post.like);
+postRouter.put("/like/:_id", post.like);
 
 
 //delete
