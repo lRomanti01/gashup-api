@@ -53,7 +53,7 @@ const getAllPostByCommunity = async (req: Request, res: Response) => {
 
     res.status(200).send({
       ok: true,
-      posts,
+      mappedPosts,
       mensaje: "Posts encontrados correctamente",
       message: "Posts found successfully",
     });
@@ -297,7 +297,7 @@ const timeLine= async (req, res)=>
     const {_id}= req.params
     const {...data}= req.body
     const post= await Post.findById(_id)
-    if(!post.user_likes.includes(data.user))
+    if(!post.user_likes.includes(data.userID))
       {
         await post.updateOne({$push:{user_likes: data.user}});
         res.status(200).send({
