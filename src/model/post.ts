@@ -1,22 +1,22 @@
 import mongoose, { Schema, model, Types } from "mongoose";
 
 export interface post extends mongoose.Document {
-  typePost_id: Types.ObjectId;
+  typePost: Types.ObjectId;
   title: string;
   description: string;
-  community_id: Types.ObjectId;
+  community: Types.ObjectId;
   user_id: Types.ObjectId;
   user_likes: Array<Types.ObjectId>;
   code: string;
   postDate: string;
-  img: Array<string>
+  img: Array<string>;
   isDeleted: boolean;
   isActive: boolean;
   hotScore: number;
 }
 
 const postSchema = new Schema({
-  typePost_id: {
+  typePost: {
     type: Schema.Types.ObjectId,
     ref: "TypePost",
     require: false,
@@ -29,12 +29,12 @@ const postSchema = new Schema({
     type: String,
     require: false,
   },
-  community_id: {
+  community: {
     type: Schema.Types.ObjectId,
     ref: "Community",
     require: true,
   },
-  user_id: {
+  user: {
     type: Schema.Types.ObjectId,
     ref: "User",
     require: true,
@@ -52,23 +52,22 @@ const postSchema = new Schema({
     type: String,
     require: true,
   },
-  img: {
-    type: Array<String>,
-    require: true,
-  },
   isDeleted: {
     type: Boolean,
-    default: false
-},
-isActive: {
+    default: false,
+  },
+  isActive: {
     type: Boolean,
-    default: true
-},
-hotScore: {
-  type: Number,
-  default:0
-},
-
+    default: true,
+  },
+  hotScore: {
+    type: Number,
+    default: 0,
+  },
+  images: {
+    type: Array<String>,
+    require: false,
+  },
 });
 
 export default model<post>("Post", postSchema);
