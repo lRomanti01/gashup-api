@@ -14,12 +14,10 @@ const createPost = async (req: Request, res: Response) => {
     const { ...data } = req.body;
 
     const img = await guardarImagenes(req);
-    const { imgUrls } = img;
-
 
     const create: post = await new Post({
       ...data,
-      images:imgUrls,
+      images: img.imgUrls,
       postDate: moment().format("YYYY-MM-DD HH:mm:ss"),
     });
     await create.save();
