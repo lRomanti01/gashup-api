@@ -204,3 +204,24 @@
  *         description: server err
  */
 
+/** getuser
+ * @openapi
+ * /api/user/getuser/:_id:
+ *   get:
+ *     tags:
+ *       - Users
+ *     summary: obtener datos de usuario
+ *     parameters:
+ *       - name: _id
+ *         in: path
+ *         required: true
+ *         description: ID del usuario
+ *     responses:
+ *       200:
+ *         description: usuario obtenido
+ *       500:
+ *         description: server err
+ */
+
+
+

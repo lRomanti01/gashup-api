@@ -244,5 +244,26 @@ const getFollowersAndFollowed= async (req, res)=>
             }
       
       }
+      const getuser= async (req, res)=>
+        {
+            try{
+              const { _id } = req.params;
+               const user= await User.findById(_id);
+                 res.status(200).send({
+                  ok: true,
+                  user,
+                  mensaje: "datos del usuario",
+                  message: "info of the user",
+                });  
+            }
+            catch (error) {
+              res.status(500).json({
+                  ok: false,
+                  error,
+                  mensaje: "¡Ups! Algo salió mal",
+                  message: "Ups! Something went wrong",
+              });
+          }
+        }
 
-export { createUser, getUserByRol, updateUser, deleteUser, follow,unfollow, getFollowersAndFollowed};
+export { createUser, getUserByRol, updateUser, deleteUser, follow,unfollow, getFollowersAndFollowed, getuser};

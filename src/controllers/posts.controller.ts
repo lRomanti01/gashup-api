@@ -218,7 +218,7 @@ const timeLine= async (req, res)=>
 }
   
 
-  const userProfile= async (req, res)=>
+const userProfile= async (req, res)=>
   {
       try{
         const { _id } = req.params;
@@ -242,7 +242,7 @@ const timeLine= async (req, res)=>
             message: "Ups! Something went wrong",
         });
     }
-  }
+}
   
   const comment= async (req, res)=>
   {
