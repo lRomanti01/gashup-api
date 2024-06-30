@@ -9,7 +9,7 @@ export interface post extends mongoose.Document {
   user_likes: Array<Types.ObjectId>;
   code: string;
   postDate: string;
-  img: Array<string>
+  images: Array<string>
   isDeleted: boolean;
   isActive: boolean;
   hotScore: number;
@@ -52,7 +52,7 @@ const postSchema = new Schema({
     type: String,
     require: true,
   },
-  img: {
+  images: {
     type: Array<String>,
     require: true,
   },
