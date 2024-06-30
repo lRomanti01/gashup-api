@@ -4,8 +4,8 @@ export interface post extends mongoose.Document {
   typePost_id: Types.ObjectId;
   title: string;
   description: string;
-  community_id: Types.ObjectId;
-  user_id: Types.ObjectId;
+  community: Types.ObjectId;
+  user: Types.ObjectId;
   user_likes: Array<Types.ObjectId>;
   code: string;
   postDate: string;
@@ -29,12 +29,12 @@ const postSchema = new Schema({
     type: String,
     require: false,
   },
-  community_id: {
+  community: {
     type: Schema.Types.ObjectId,
     ref: "Community",
     require: true,
   },
-  user_id: {
+  user: {
     type: Schema.Types.ObjectId,
     ref: "User",
     require: true,

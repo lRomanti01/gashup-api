@@ -168,9 +168,9 @@ const timeLine= async (req, res)=>
       allPosts.sort((a, b) => b.hotScore - a.hotScore);
   
       // Separar publicaciones
-      const userCommunityPosts = allPosts.filter(post => userCommunityIds.includes(post.community_id));
-      const friendsPostsOnly = allPosts.filter(post => user.followers.includes(String(post.user_id)));
-      const otherCommunityPosts = allPosts.filter(post => !userCommunityIds.includes(post.community_id) && !user.followers.includes(String(post.user_id)));
+      const userCommunityPosts = allPosts.filter(post => userCommunityIds.includes(post.community));
+      const friendsPostsOnly = allPosts.filter(post => user.followers.includes(String(post.user)));
+      const otherCommunityPosts = allPosts.filter(post => !userCommunityIds.includes(post.community) && !user.followers.includes(String(post.user)));
   
       // Crear el feed combinado
       const combinedFeed = [];
