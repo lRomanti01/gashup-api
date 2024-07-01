@@ -221,7 +221,7 @@ const getFollowersAndFollowed= async (req, res)=>
   {
         try
             {
-             const {id}= req.params;
+             const {id}= req.body;
              const user= await User.findById(id);
              const followers= user.followers
              const followed= user.followed
@@ -247,8 +247,8 @@ const getFollowersAndFollowed= async (req, res)=>
       const getuser= async (req, res)=>
         {
             try{
-              const { _id } = req.params;
-               const user= await User.findById(_id);
+              const { ...data } = req.body;
+               const user= await User.findById(data.userID);
                  res.status(200).send({
                   ok: true,
                   user,

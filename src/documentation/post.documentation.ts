@@ -10,16 +10,14 @@
  *     requestBody:
  *      required: true
  *      content:
- *        application/json:
+ *         multipart/form-data:
  *           schema:
  *            type: object
  *            required:
- *              - typePost_id
  *              - title
  *              - description
- *              - community_id
+ *              - community
  *              - user_id
- *              - code
  *              - img
  *            properties:
  *              typePost_id:
@@ -31,7 +29,7 @@
  *              description:
  *                type: string
  *                default: ''
- *              community_id:
+ *              community:
  *                type: string
  *                default: ''
  *              user_id:
@@ -131,11 +129,10 @@
  *     requestBody:
  *      required: true
  *      content:
- *        application/json:
+ *         multipart/form-data:
  *           schema:
  *            type: object
  *            required:
- *              - typePost_id
  *              - title
  *              - description
  *              - img

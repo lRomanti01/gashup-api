@@ -14,8 +14,6 @@ const createPost = async (req: Request, res: Response) => {
     const { ...data } = req.body;
 
     const img = await guardarImagenes(req);
-    const { imgUrls } = img;
-
 
     const create: post = await new Post({
       ...data,
@@ -69,6 +67,7 @@ const getAllPostByCommunity = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 const updatePost = async (req: Request, res: Response) => {
   try {
@@ -125,33 +124,88 @@ const deletePost = async (req: Request, res: Response) => {
   }
 };
 
-const timeLine = async (req: Request, res: Response) => {
-  try {
-    const { _id } = req.params;
-    const user = await User.findById(_id);
-    const userCommunities = await Community.find({ members_id: _id });
-
-    const friendsPosts = await Promise.all(
-      user.followers.map((IDfriend) => {
-        return Post.find({ userid: IDfriend });
-      })
-    );
-
-    const communityPosts = await Promise.all(
-      userCommunities.map((community) => {
-        return Post.find({ community_id: community._id });
-      })
-    );
-
-    // Combinar todas las publicaciones
-    const allPosts = communityPosts.concat(...friendsPosts);
-
-    res.status(200).json({
-      ok: true,
-      allPosts,
-      mensaje: "Publicaciones de amigos y comunidades",
-      message: "Posts of friends and communities",
-    });
+const timeLine= async (req, res)=>
+  {
+    try {
+      const { _id } = req.params;
+      const user = await User.findById(_id);
+      const userCommunities = await Community.find({ members_id: _id });
+      const userCommunityIds = userCommunities.map(community => community._id);
+  
+      const friendsPosts = await Promise.all(
+          user.followers.map(IDfriend => {
+              return Post.find({ userid: IDfriend, isActive: true });
+          })
+      );
+  
+      const communityPosts = await Promise.all(
+          userCommunities.map(community => {
+              return Post.find({ community_id: community._id, isActive: true });
+          })
+      );
+  
+      const nonUserCommunityPosts = await Post.find({
+          community_id: { $nin: userCommunityIds },
+          isActive: true
+      });
+  
+      // Combinar todas las publicaciones
+      const allPosts = [...communityPosts.flat(), ...friendsPosts.flat(), ...nonUserCommunityPosts];
+  
+      // Función para calcular la puntuación de cada publicación
+      const calculateHotScore = post => {
+          const likes = post.user_likes.length || 0;
+          const ageInHours = (Date.now() - new Date(post.createdAt).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
+          return (likes / (ageInHours + 2));
+      };
+  
+      // Calcular la puntuación de "Hot" para cada publicación
+      allPosts.forEach(post => {
+          post.hotScore = calculateHotScore(post);
+      });
+  
+      // Ordenar las publicaciones por la puntuación de "Hot"
+      allPosts.sort((a, b) => b.hotScore - a.hotScore);
+  
+      // Separar publicaciones
+      const userCommunityPosts = allPosts.filter(post => userCommunityIds.includes(post.community));
+      const friendsPostsOnly = allPosts.filter(post => user.followers.includes(String(post.user)));
+      const otherCommunityPosts = allPosts.filter(post => !userCommunityIds.includes(post.community) && !user.followers.includes(String(post.user)));
+  
+      // Crear el feed combinado
+      const combinedFeed = [];
+      let userCommunityIndex = 0;
+      let friendsIndex = 0;
+      let otherCommunityIndex = 0;
+  
+      while (userCommunityIndex < userCommunityPosts.length || friendsIndex < friendsPostsOnly.length || otherCommunityIndex < otherCommunityPosts.length) {
+          // Agregar 2 posts de las comunidades del usuario
+          for (let i = 0; i < 2 && userCommunityIndex < userCommunityPosts.length; i++) {
+              combinedFeed.push(userCommunityPosts[userCommunityIndex++]);
+          }
+  
+          // Agregar 4 posts de otras comunidades
+          for (let i = 0; i < 4 && otherCommunityIndex < otherCommunityPosts.length; i++) {
+              combinedFeed.push(otherCommunityPosts[otherCommunityIndex++]);
+          }
+  
+          // Agregar 2 posts de amigos
+          for (let i = 0; i < 2 && friendsIndex < friendsPostsOnly.length; i++) {
+              combinedFeed.push(friendsPostsOnly[friendsIndex++]);
+          }
+  
+          // Agregar 4 posts de otras comunidades
+          for (let i = 0; i < 4 && otherCommunityIndex < otherCommunityPosts.length; i++) {
+              combinedFeed.push(otherCommunityPosts[otherCommunityIndex++]);
+          }
+      }
+  
+      res.status(200).json({
+          ok: true,
+          orden: combinedFeed,
+          mensaje: "Publicaciones de amigos y comunidades",
+          message: "Posts of friends and communities",
+      });
   } catch (error) {
     res.status(500).json({
       ok: false,

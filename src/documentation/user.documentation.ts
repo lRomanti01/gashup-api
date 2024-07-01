@@ -206,21 +206,23 @@
 
 /** getuser
  * @openapi
- * /api/user/getuser/:_id:
+ * /api/user/getuser:
  *   get:
  *     tags:
  *       - Users
  *     summary: obtener datos de usuario
- *     parameters:
- *       - name: _id
- *         in: path
- *         required: true
- *         description: ID del usuario
- *     responses:
- *       200:
- *         description: usuario obtenido
- *       500:
- *         description: server err
+*     requestBody:
+*      required: true
+*      content:
+*        application/json:
+*           schema:
+*            type: object
+*            required:
+*              - userID
+*            properties:
+*              userID:
+*                type: string
+*                default: ''
  */
 
 

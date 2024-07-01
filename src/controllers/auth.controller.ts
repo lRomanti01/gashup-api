@@ -49,7 +49,7 @@ const login = async (req: Request, res: Response) => {
     res.status(200).send({
       ok: true,
       message: "Welcome",
-      user:{...User, password:null},
+      user,
       // token,
     });
   } catch (error) {
@@ -61,6 +61,5 @@ const login = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 export { login };

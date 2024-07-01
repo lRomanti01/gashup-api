@@ -5,11 +5,11 @@ export interface post extends mongoose.Document {
   title: string;
   description: string;
   community: Types.ObjectId;
-  user_id: Types.ObjectId;
+  user: Types.ObjectId;
   user_likes: Array<Types.ObjectId>;
   code: string;
   postDate: string;
-  img: Array<string>;
+  images: Array<string>
   isDeleted: boolean;
   isActive: boolean;
   hotScore: number;
