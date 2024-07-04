@@ -19,11 +19,11 @@ postRouter.get("/timeLine/:_id", post.timeLine);
 
 //put
 postRouter.put("/updatePost/:id", post.updatePost);
-postRouter.put("/like/:_id", post.like);
+postRouter.put("/likePost/:_id", post.likePost);
 
 
 //delete
-postRouter.delete("/deletePost/:id", post.deletePost);
+postRouter.delete("/deletePost/:_id", post.deletePost);
 
 
 
