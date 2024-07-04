@@ -244,26 +244,27 @@ const getFollowersAndFollowed= async (req, res)=>
             }
       
       }
-      const getuser= async (req, res)=>
-        {
-            try{
-              const { ...data } = req.body;
-               const user= await User.findById(data.userID);
-                 res.status(200).send({
-                  ok: true,
-                  user,
-                  mensaje: "datos del usuario",
-                  message: "info of the user",
-                });  
-            }
-            catch (error) {
-              res.status(500).json({
-                  ok: false,
-                  error,
-                  mensaje: "¡Ups! Algo salió mal",
-                  message: "Ups! Something went wrong",
-              });
-          }
+      const getuser = async (req: Request, res: Response) => {
+        try{
+          const { userID } = req.params;
+           const user= await User.findById(userID);
+
+      
+             res.status(200).send({
+              ok: true,
+              user,
+              mensaje: "Post del usuario",
+              message: "Post of the user",
+            });  
         }
+        catch (error) {
+          res.status(500).json({
+              ok: false,
+              error,
+              mensaje: "¡Ups! Algo salió mal",
+              message: "Ups! Something went wrong",
+          });
+      }
+      };
 
 export { createUser, getUserByRol, updateUser, deleteUser, follow,unfollow, getFollowersAndFollowed, getuser};

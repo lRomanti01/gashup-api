@@ -52,7 +52,7 @@
 /** PUT Methods */
 /** updateUser
  * @openapi
- * '/api/user/updateUser/id':
+ * '/api/user/updateUser/{id}':
  *   put:
  *     tags:
  *       - Users
@@ -100,7 +100,7 @@
 
 /** follow
 * @openapi
-* '/api/user/follow/:id':
+* '/api/user/follow/{id}':
 *  put:
 *     tags:
 *     - Users
@@ -133,7 +133,7 @@
 
 /** unfollow
 * @openapi
-* '/api/user/unfollow/:id':
+* '/api/user/unfollow/{id}':
 *  put:
 *     tags:
 *     - Users
@@ -167,7 +167,7 @@
 /** DELETE Methods */
 /** deleteUser
  * @openapi
- * /api/user/deleteUser/id:
+ * /api/user/deleteUser/{id}:
  *   delete:
  *     tags:
  *       - Users
@@ -187,7 +187,7 @@
 /** GET Methods */
 /** getUserByRol
  * @openapi
- * /api/user/getUserByRol/:code:
+ *'/api/user/getUserByRol/{code}':
  *   get:
  *     tags:
  *       - Users
@@ -205,25 +205,25 @@
  */
 
 /** getuser
- * @openapi
- * /api/user/getuser:
- *   get:
- *     tags:
- *       - Users
- *     summary: obtener datos de usuario
-*     requestBody:
-*      required: true
-*      content:
-*        application/json:
-*           schema:
-*            type: object
-*            required:
-*              - userID
-*            properties:
-*              userID:
-*                type: string
-*                default: ''
- */
+* @openapi
+* '/api/user/getuser/{userID}':
+*   get:
+*     tags:
+*       - Users
+*     summary: obtener datos de usuario
+*     parameters:
+*       - in: path
+*         name: userID
+*         required: true
+*         schema:
+*           type: string
+*         description: id del usuario
+*     responses:
+*       200:
+*         description: usuarios obtenidos
+*       500:
+*         description: server err
+*/
 
 
 

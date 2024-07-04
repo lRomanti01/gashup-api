@@ -121,7 +121,7 @@
 /**  PUT Methods */
 /** updatePost
  * @openapi
- * '/api/post/updatePost/:id':
+ * '/api/post/updatePost/{id}':
  *  put:
  *     tags:
  *     - Post
@@ -160,7 +160,7 @@
 
 /** like
  * @openapi
- * '/api/post/like/:_id':
+ * '/api/post/like/{_id}':
  *  put:
  *     tags:
  *     - Post
@@ -192,7 +192,7 @@
 /**  DELETE Methods */
 /** deletePost
  * @openapi
- * '/api/post/deletePost/:id':
+ * '/api/post/deletePost/{id}':
  *  delete:
  *     tags:
  *     - Post
@@ -212,7 +212,7 @@
 /**  GET Methods */
 /** userProfile
  * @openapi
- * '/api/post/userProfile/_id':
+ * '/api/post/userProfile/{_id}':
  *  get:
  *     tags:
  *     - Post
@@ -231,7 +231,7 @@
 
 /** getAllPostByCommunity
  * @openapi
- * '/api/post/getAllPostByCommunity/:community':
+ * '/api/post/getAllPostByCommunity/{community}':
  *  get:
  *     tags:
  *     - Post
@@ -250,7 +250,7 @@
 
 /** timeLine
  * @openapi
- * '/api/post/timeLine/_id':
+ * '/api/post/timeLine/{_id}':
  *  get:
  *     tags:
  *     - Post

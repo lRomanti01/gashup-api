@@ -89,7 +89,7 @@
 
 /** joinChatCommunity
  * @openapi
- * /api/community/joinChatCommunity/_id:
+ * /api/community/joinChatCommunity/{_id}:
  *   post:
  *     tags:
  *       - Community
@@ -126,7 +126,7 @@
 
 /** joinCommunity
  * @openapi
- * '/api/community/joinCommunity/_id':
+ * '/api/community/joinCommunity/{_id}':
  *   post:
  *     tags:
  *       - Community
@@ -158,7 +158,7 @@
 /** PUT Methods */
 /** updateCommunity
     * @openapi
-    * '/api/community/updateCommunity/_id':
+    * '/api/community/updateCommunity/{_id}':
     *   put:
     *     tags:
     *       - Community
@@ -205,7 +205,7 @@
 
 /** assignAdmins
      * @openapi
-     * '/api/community/assignAdmins/_id':
+     * '/api/community/assignAdmins/{_id}':
      *  put:
      *     tags:
      *     - Community
@@ -242,7 +242,7 @@
 
 /** updateCommunityChat
  * @openapi
- * '/api/community/updateCommunityChat/_id':
+ * '/api/community/updateCommunityChat/{_id}':
  *   put:
  *     tags:
  *       - Community
@@ -282,7 +282,7 @@
 /** DELETE Methods */
 /** deleteCommunity
      * @openapi
-     * '/api/community/deleteCommunity/_id':
+     * '/api/community/deleteCommunity/{_id}':
      *  delete:
      *     tags:
      *     - Community
@@ -318,7 +318,7 @@
 
 /** banFromCommunity
      * @openapi
-     * '/api/community/banFromCommunity/_id':
+     * '/api/community/banFromCommunity/{_id}':
      *  delete:
      *     tags:
      *     - Community
@@ -356,7 +356,7 @@
 
 /** leaveCommunity
      * @openapi
-     * '/api/community/leaveCommunity/_id':
+     * '/api/community/leaveCommunity/{_id}':
      *  delete:
      *     tags:
      *     - Community
@@ -387,7 +387,7 @@
     
 /** leaveChatCommunity
      * @openapi
-     * '/api/community/leaveChatCommunity/_id':
+     * '/api/community/leaveChatCommunity/{_id}':
      *  delete:
      *     tags:
      *     - Community
@@ -418,7 +418,7 @@
     
 /** deleteCommunityChat
      * @openapi
-     * '/api/community/deleteCommunityChat/_id':
+     * '/api/community/deleteCommunityChat/{_id}':
      *  delete:
      *     tags:
      *     - Community
@@ -454,7 +454,7 @@
 /** GET Methods */
 /** getCommunity
      * @openapi
-     * '/api/community/getCommunity/_id':
+     * '/api/community/getCommunity/{_id}':
      *  get:
      *     tags:
      *     - Community
@@ -530,7 +530,7 @@
   
 /** getCommunityChats
      * @openapi
-     * '/api/community/getCommunityChats/_id':
+     * '/api/community/getCommunityChats/{_id}':
      *  get:
      *     tags:
      *     - Community
