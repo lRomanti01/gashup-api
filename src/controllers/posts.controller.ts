@@ -21,7 +21,6 @@ const createPost = async (req: Request, res: Response) => {
       postDate: moment().format("YYYY-MM-DD HH:mm:ss"),
     });
     await create.save();
-
     res.status(201).send({
       ok: true,
       post: create,
@@ -67,7 +66,6 @@ const getAllPostByCommunity = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 const updatePost = async (req: Request, res: Response) => {
   try {
@@ -155,7 +153,7 @@ const timeLine= async (req, res)=>
       // Función para calcular la puntuación de cada publicación
       const calculateHotScore = post => {
           const likes = post.user_likes.length || 0;
-          const ageInHours = (Date.now() - new Date(post.createdAt).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
+          const ageInHours = (Date.now() - new Date(post.postDate).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
           return (likes / (ageInHours + 2));
       };
   
@@ -262,6 +260,71 @@ const comment = async (req: Request, res: Response) => {
   }
 };
 
+const deleteComment = async (req: Request, res: Response) => {
+  try {
+    const { commentId } = req.params;
+    await Comments.findByIdAndDelete(commentId);
+    res.status(200).send({
+      ok: true,
+      mensaje: "Comentario borrado",
+      message: "Comment deleted",
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error,
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+    });
+  }
+};
+
+const updateComment = async (req: Request, res: Response) => {
+  try {
+    const { commentId } = req.params;
+    const { ...data } = req.body;
+
+    const comment = await Comments.findById(commentId);
+    if (!comment) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Comentario no encontrado",
+        message: "Comment not found",
+      });
+    }
+
+    const now = new Date();
+    const commentCreatedAt = new Date(comment.createdAt);
+    const timeDiff = Math.abs(now.getTime() - commentCreatedAt.getTime());
+    const minutesDiff = Math.floor(timeDiff / 1000 / 60);
+
+    if (minutesDiff > 25) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "El comentario no se puede actualizar después de 25 minutos",
+        message: "The comment cannot be updated after 25 minutes",
+      });
+    }
+
+    Object.assign(comment, data);
+    await comment.save();
+
+    res.status(200).send({
+      ok: true,
+      updatedComment: comment,
+      mensaje: "Comentario actualizado",
+      message: "Comment updated",
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error,
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+    });
+  }
+};
+
 const responseComment = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
@@ -272,6 +335,71 @@ const responseComment = async (req: Request, res: Response) => {
       newComment,
       mensaje: "comentario realizado",
       message: "comment done",
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error,
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+    });
+  }
+};
+
+const deleteResponseComment = async (req: Request, res: Response) => {
+  try {
+    const { responseCommentId } = req.params;
+    await SubComments.findByIdAndDelete(responseCommentId);
+    res.status(200).send({
+      ok: true,
+      mensaje: "Respuesta de comentario borrada",
+      message: "Response comment deleted",
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error,
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+    });
+  }
+};
+
+const updateResponseComment = async (req: Request, res: Response) => {
+  try {
+    const { responseCommentId } = req.params;
+    const { ...data } = req.body;
+
+    const subComment = await SubComments.findById(responseCommentId);
+    if (!subComment) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Respuesta de comentario no encontrada",
+        message: "Response comment not found",
+      });
+    }
+
+    const now = new Date();
+    const commentCreatedAt = new Date(subComment.createdAt);
+    const timeDiff = Math.abs(now.getTime() - commentCreatedAt.getTime());
+    const minutesDiff = Math.floor(timeDiff / 1000 / 60);
+
+    if (minutesDiff > 25) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "La respuesta de comentario no se puede actualizar después de 25 minutos",
+        message: "The response comment cannot be updated after 25 minutes",
+      });
+    }
+
+    Object.assign(subComment, data);
+    await subComment.save();
+
+    res.status(200).send({
+      ok: true,
+      updatedResponseComment: subComment,
+      mensaje: "Respuesta de comentario actualizada",
+      message: "Response comment updated",
     });
   } catch (error) {
     res.status(500).json({
@@ -325,4 +453,8 @@ export {
   comment,
   responseComment,
   likePost,
+  deleteComment,
+  updateComment,
+  deleteResponseComment,
+  updateResponseComment,
 };

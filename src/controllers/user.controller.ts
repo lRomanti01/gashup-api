@@ -81,6 +81,9 @@ const updateUser = async (req: Request, res: Response) => {
     const img = await guardarImagenes(req);
     const { imgUrls } = img;
     const { bannerUrl } = img;
+
+    const encrypts = await encrypt(data.password);
+    data.password = encrypts;
     let banner;
     let image;
 
@@ -89,11 +92,11 @@ const updateUser = async (req: Request, res: Response) => {
    
     if(user.img==null|| user.img.length<2){image=imgUrls[0];} //si no hay img en firebase
     else if(req.files['img'] && user.img!=imgUrls[0]){deleteImage(user.img);image=imgUrls[0];}//si hay img en firebase
-               
+
     const update: user | null = await User.findByIdAndUpdate(
       id,
-      { ...data,img: image,
-        banner:banner},
+      { ...data,img: image ? imgUrls : null,
+        banner:banner? banner:null,},
       { new: true }
     );
 
@@ -215,11 +218,10 @@ const follow= async (req, res)=>
             });
           }
     
-  }
-  
+  } 
 const getFollowersAndFollowed= async (req, res)=>
   {
-        try
+    try
             {
              const {id}= req.body;
              const user= await User.findById(id);
@@ -244,8 +246,9 @@ const getFollowersAndFollowed= async (req, res)=>
             }
       
       }
-      const getuser = async (req: Request, res: Response) => {
-        try{
+
+const getuser = async (req: Request, res: Response) => {
+    try{
           const { userID } = req.params;
            const user= await User.findById(userID);
 

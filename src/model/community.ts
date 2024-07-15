@@ -14,6 +14,8 @@ export interface community extends mongoose.Document {
     created_at: string;
     bannedUsers_id: Array<Types.ObjectId>;
     communityCategory_id: Array<Types.ObjectId>;
+    hotScore: number;
+
 }
 
 const communitySchema = new Schema({
@@ -64,7 +66,11 @@ const communitySchema = new Schema({
         type: Array<Schema.Types.ObjectId>,
         ref: "CommunityCategory",
         require: true,
-    }
+    },
+    hotScore: {
+        type: Number,
+        default: 0,
+      },
 });
 
 export default model<community>('Community', communitySchema);

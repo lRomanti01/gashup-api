@@ -4,6 +4,9 @@ export interface comments extends mongoose.Document {
   description: string;
   user_id: Types.ObjectId;
   post_id: Types.ObjectId;
+  isDeleted: boolean;
+  isActive: boolean;
+  createdAt: string;
 }
 
 const commentsSchema = new Schema({
@@ -21,6 +24,18 @@ const commentsSchema = new Schema({
     ref: "Post",
     require: true,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false
+},
+isActive: {
+    type: Boolean,
+    default: true
+},
+createdAt: {
+    type: String,
+    default: new Date().toISOString(),
+},
 });
 
 export default model<comments>("Comments", commentsSchema);

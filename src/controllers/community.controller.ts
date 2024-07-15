@@ -620,6 +620,41 @@ const updateCommunityChat = async (req: Request, res: Response) => {
     });
   }
 };
+const hotCommunity = async (req: Request, res: Response) => {
+  try {
+    const commmunity = await Community.find({ isActive: true });
+    const calculateHotScore = commmunity => {
+      const createdAt = commmunity.created_at;
+      const members = commmunity.members_id.length||0;
+      const ageInHours = (Date.now() - new Date(createdAt).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
+      return (members / (ageInHours + 2));
+  };
+  // Calcular la puntuación de "Hot" para cada publicación
+  let n=0;
+  commmunity.forEach(commmunity => {
+    commmunity.hotScore = calculateHotScore(commmunity);n++; console.log(commmunity.hotScore)
+  });
+  
+
+  // Ordenar las publicaciones por la puntuación de "Hot"
+  commmunity.sort((a, b) => b.hotScore - a.hotScore);
+  const topSixCommunities = commmunity.slice(0,6);
+    res.status(200).send({
+      ok: true,
+      topSixCommunities,
+      mensaje: "Comunidad destacada con exito",
+      message: "Community featured successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      ok: false,
+      error,
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+    });
+  }
+};
 export {
   getCommunitiesForCategories,
   createCommunity,
@@ -637,4 +672,5 @@ export {
   leaveChatCommunity,
   updateCommunityChat,
   getCommunityChats,
+  hotCommunity,
 };

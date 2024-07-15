@@ -27,22 +27,15 @@ communityRouter.put(
 communityRouter.delete("/deleteCommunity/:_id", community.deleteCommunity);
 communityRouter.delete("/banFromCommunity/:_id", community.banFromCommunity);
 communityRouter.delete("/leaveCommunity/:_id", community.leaveCommunity);
-communityRouter.delete(
-  "/leaveChatCommunity/:_id",
-  community.leaveChatCommunity
-);
-communityRouter.delete(
-  "/deleteCommunityChat/:_id",
-  community.deleteCommunityChat
-);
+communityRouter.delete("/leaveChatCommunity/:_id",community.leaveChatCommunity);
+communityRouter.delete( "/deleteCommunityChat/:_id",community.deleteCommunityChat);
 
 //get
-communityRouter.get("/getCommunities/", community.getCommunities);
+communityRouter.get("/getCommunities", community.getCommunities);
 communityRouter.get("/getCommunity/_id", community.getCommunity);
-communityRouter.get(
-  "/getCommunitiesForCategories",
-  community.getCommunitiesForCategories
-);
+communityRouter.get("/getCommunitiesForCategories",community.getCommunitiesForCategories);
 communityRouter.get("/getCommunityChats/:_id", community.getCommunityChats);
+communityRouter.get("/hotCommunity", community.hotCommunity);
+
 
 export default communityRouter;
