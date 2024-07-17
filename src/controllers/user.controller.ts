@@ -91,11 +91,11 @@ const updateUser = async (req: Request, res: Response) => {
     let profilePictur;
 
     if(user.banner==null){ banner=bannerUrl;}//si no hay banner en firebase
-    else if(req.files['banner'] != null){deleteImage(user.banner); banner=bannerUrl;}//si hay banner en firebase
+    else if(req.files['banner'] != user.banner ){deleteImage(user.banner); banner=bannerUrl;}//si hay banner en firebase
     else if(req.files['banner'] == null && user.banner!=null){deleteImage(user.banner); banner=null;}//si se queda sin banner
 
     if(user.img==null){profilePictur=imgUrl;} //si no hay img en firebase
-    else if(req.files['img'] != null ){deleteImage(user.img);profilePictur=imgUrl;}//si hay img en firebase
+    else if(req.files['img'] != user.img ){deleteImage(user.img);profilePictur=imgUrl;}//si hay img en firebase
     else if(req.files['img'] == null && user.img!=null){deleteImage(user.img);profilePictur=null;}//si se queda sin img
 
     const update: user | null = await User.findByIdAndUpdate(
