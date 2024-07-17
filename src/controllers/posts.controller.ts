@@ -199,7 +199,7 @@ const timeLine = async (req, res) => {
     const calculateHotScore = (post) => {
       const likes = post.user_likes.length || 0;
       const ageInHours =
-        (Date.now() - new Date(post.createdAt).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
+        (Date.now() - new Date(post.postDate).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
       return likes / (ageInHours + 2);
     };
 

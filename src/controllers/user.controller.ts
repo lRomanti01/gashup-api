@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import User, { user } from "../model/user";
 import Roles, { role } from "../model/role";
 import { encrypt } from "../helper/password-bcrypts";
-import { guardarImagenes, deleteImage } from "./uploadImage";
+import { guardarImagenes, deleteImage, perfiles } from "./uploadImage";
 
 const createUser = async (req: Request, res: Response) => {
   try {
@@ -22,14 +22,14 @@ const createUser = async (req: Request, res: Response) => {
       });
     }
 
-    const img = await guardarImagenes(req);
-    const { imgUrls } = img;
+    const img = await perfiles(req);
+    const { imgUrl } = img;
     const { bannerUrl } = img;
 
     create = await new User({
       ...data,
       role: role?._id,
-      img: imgUrls[0] ? imgUrls[0] : null,
+      img: imgUrl ? imgUrl : null,
       banner:bannerUrl? bannerUrl:null,
     });
     await create.save();
@@ -78,24 +78,29 @@ const updateUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { ...data } = req.body;
     const user: user= await User.findById(id)
-    const img = await guardarImagenes(req);
-    const { imgUrls } = img;
+    const img = await perfiles(req);
+    const { imgUrl } = img;
     const { bannerUrl } = img;
 
-    const encrypts = await encrypt(data.password);
-    data.password = encrypts;
+    if(data.password){
+      const encrypts = await encrypt(data.password);
+      data.password = encrypts;
+    }
+  
     let banner;
-    let image;
+    let profilePictur;
 
-    if(user.banner==null || user.img.length<2){ banner=bannerUrl;}//si no hay banner en firebase
-    else if(req.files['banner'] && user.banner!=bannerUrl){deleteImage(user.banner); banner=bannerUrl;}//si hay banner en firebase
-   
-    if(user.img==null|| user.img.length<2){image=imgUrls[0];} //si no hay img en firebase
-    else if(req.files['img'] && user.img!=imgUrls[0]){deleteImage(user.img);image=imgUrls[0];}//si hay img en firebase
+    if(user.banner==null){ banner=bannerUrl;}//si no hay banner en firebase
+    else if(req.files['banner'] != null && user.banner!=bannerUrl){deleteImage(user.banner); banner=bannerUrl;}//si hay banner en firebase
+    else if(req.files['banner'] == null && user.banner!=null){deleteImage(user.banner); banner=null;}//si se queda sin banner
+
+    if(user.img==null){profilePictur=imgUrl;} //si no hay img en firebase
+    else if(req.files['img'] != null && user.img!=imgUrl){deleteImage(user.img);profilePictur=imgUrl;}//si hay img en firebase
+    else if(req.files['img'] == null && user.img!=null){deleteImage(user.img);profilePictur=null;}//si se queda sin img
 
     const update: user | null = await User.findByIdAndUpdate(
       id,
-      { ...data,img: image ? imgUrls : null,
+      { ...data,img: profilePictur ? imgUrl : null,
         banner:banner? banner:null,},
       { new: true }
     );

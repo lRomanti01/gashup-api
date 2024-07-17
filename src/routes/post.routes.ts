@@ -7,7 +7,7 @@ const postRouter: express.Router = express.Router();
 //post
 postRouter.post("/createPost", upload, post.createPost);
 postRouter.post("/comment", post.comment);
-postRouter.post("/responseComment", post.responseComment);
+postRouter.post("/responseComment", post.responseComment);//documentar
 
 
 //get
@@ -20,15 +20,15 @@ postRouter.get("/getCommentsByPost/:_id", post.getCommentsByPost);
 
 //put
 postRouter.put("/updatePost/:id", post.updatePost);
-postRouter.put("/updateComment/:commentId", post.updateComment);
-postRouter.put("/updateResponseComment/:responseCommentId", post.updateResponseComment);
+postRouter.put("/updateComment/:commentId", post.updateComment);//documentar
+postRouter.put("/updateResponseComment/:responseCommentId", post.updateResponseComment);//documentar
 postRouter.put("/likePost/:_id", post.likePost);
 
 
 //delete
 postRouter.delete("/deletePost/:_id", post.deletePost);
-postRouter.delete("/deleteComment/:commentId", post.deleteComment);
-postRouter.delete("/deleteResponseComment/:responseCommentId", post.deleteResponseComment);
+postRouter.delete("/deleteComment/:commentId", post.deleteComment);//documentar
+postRouter.delete("/deleteResponseComment/:responseCommentId", post.deleteResponseComment);//documentar
 
 
 

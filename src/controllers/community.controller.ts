@@ -2,10 +2,8 @@ import { Request, Response } from "express";
 import Community, { community } from "../model/community";
 import CommunityChats, { communitychats } from "../model/communityChats";
 import User, { user } from "../model/user";
-import CommunityCategory, {
-  communitycategory,
-} from "../model/communityCategory";
-import { guardarImagenes, deleteImage } from "./uploadImage";
+import CommunityCategory, {communitycategory,} from "../model/communityCategory";
+import { guardarImagenes, deleteImage, perfiles } from "./uploadImage";
 
 const createCommunity = async (req: Request, res: Response) => {
   try {
@@ -30,15 +28,16 @@ const createCommunity = async (req: Request, res: Response) => {
         message: "Community name not available",
       });
     } else {
-      const img = await guardarImagenes(req);
-      const { imgUrls } = img;
+      const img = await perfiles(req);
+      const { imgUrl } = img;
       const { bannerUrl } = img;
 
       const create: community = await new Community({
         ...data,
         communityCategory_id: IDs,
-        img: imgUrls[0] ? imgUrls[0] : null,
-        banner: bannerUrl ? bannerUrl : null,
+        img: imgUrl ? imgUrl : null,
+        banner:bannerUrl? bannerUrl:null,
+        
       });
       await create.save();
 
@@ -119,8 +118,6 @@ const updateCommunity = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const { ...data } = req.body;
-    let image;
-    let banner;
     const community: community | null = await Community.findById({ _id });
     if (
       //validacion de permisos para actualizar
@@ -134,31 +131,26 @@ const updateCommunity = async (req: Request, res: Response) => {
           mensaje: "Comunidad no encontrada",
           message: "Community not found",
         });
-      } else {
-        //si existe
-        const img = await guardarImagenes(req);
-        const { imgUrls } = img;
+      } else {//si existe
+        const img = await perfiles(req);
+        const { imgUrl } = img;
         const { bannerUrl } = img;
-        if (community.banner == null) {
-          banner = bannerUrl;
-        } //si no hay banner en firebase
-        else {
-          deleteImage(community.banner);
-          banner = bannerUrl;
-        } //si hay banner en firebase
-
-        if (community.img == null || community.img.length < 2) {
-          image = imgUrls[0];
-        } //si no hay img en firebase
-        else {
-          deleteImage(community.img);
-          image = imgUrls[0];
-        } //si hay img en firebase
-
+        let banner;
+        let profilePictur;
+    
+        if(community.banner==null){ banner=bannerUrl;}//si no hay banner en firebase
+        else if(req.files['banner'] != null && community.banner!=bannerUrl){deleteImage(community.banner); banner=bannerUrl;}//si hay banner en firebase
+        else if(req.files['banner'] == null && community.banner!=null){deleteImage(community.banner); banner=null;}//si se queda sin banner
+    
+        if(community.img==null){profilePictur=imgUrl;} //si no hay img en firebase
+        else if(req.files['img'] != null && community.img!=imgUrl){deleteImage(community.img);profilePictur=imgUrl;}//si hay img en firebase
+        else if(req.files['img'] == null && community.img!=null){deleteImage(community.img);profilePictur=null;}//si se queda sin img
+    
         const communityUpdate: community | null =
           await Community.findByIdAndUpdate(
             _id,
-            { ...data, img: image, banner: banner },
+            { ...data,img: profilePictur ? imgUrl : null,
+              banner:banner? banner:null,},
             { new: true }
           );
         res.status(200).send({
@@ -464,13 +456,13 @@ const createChatCommunity = async (req: Request, res: Response) => {
         message: "chat name not available",
       });
     } else {
-      const img = await guardarImagenes(req);
-      const { imgUrls } = img;
+      const img = await perfiles(req);
+      const { imgUrl } = img;
       const { bannerUrl } = img;
       const create: communitychats = await new CommunityChats({
         ...data,
-        img: imgUrls[0] ? imgUrls[0] : null,
-        banner: bannerUrl[0] ? bannerUrl[0] : null,
+        img: imgUrl ? imgUrl : null,
+        banner:bannerUrl? bannerUrl:null,
       });
 
       await create.save();
