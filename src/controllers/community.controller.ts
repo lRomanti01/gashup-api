@@ -2,7 +2,9 @@ import { Request, Response } from "express";
 import Community, { community } from "../model/community";
 import CommunityChats, { communitychats } from "../model/communityChats";
 import User, { user } from "../model/user";
-import CommunityCategory, {communitycategory,} from "../model/communityCategory";
+import CommunityCategory, {
+  communitycategory,
+} from "../model/communityCategory";
 import { guardarImagenes, deleteImage } from "./uploadImage";
 
 const createCommunity = async (req: Request, res: Response) => {
@@ -36,8 +38,7 @@ const createCommunity = async (req: Request, res: Response) => {
         ...data,
         communityCategory_id: IDs,
         img: imgUrls[0] ? imgUrls[0] : null,
-        banner:bannerUrl? bannerUrl:null,
-        
+        banner: bannerUrl ? bannerUrl : null,
       });
       await create.save();
 
@@ -83,24 +84,27 @@ const getCommunity = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const { ...data } = req.body;
-    const commmunity = await Community.findById({ _id });
-    const user = await User.findOne({ _id: data.userID });
+    const commmunity = await Community.findById({ _id }).populate("members_id");
 
-    if (commmunity.bannedUsers_id.includes(user._id)) {
-      res.status(418).send({
-        ok: false,
-        data: commmunity,
-        mensaje: "usuario baneado",
-        message: "User banned",
-      });
-    } else {
-      res.status(200).send({
-        ok: true,
-        data: commmunity,
-        mensaje: "todas las comunidades",
-        message: "all communities",
-      });
+    if (data.user_id) {
+      const user = await User.findOne({ _id: data?.user_id });
+
+      if (commmunity.bannedUsers_id.includes(user._id)) {
+        return res.status(418).send({
+          ok: false,
+          data: commmunity,
+          mensaje: "usuario baneado",
+          message: "User banned",
+        });
+      }
     }
+
+    res.status(200).send({
+      ok: true,
+      data: commmunity,
+      mensaje: "todas las comunidades",
+      message: "all communities",
+    });
   } catch (error) {
     console.log(error);
     res.status(500).send({
@@ -118,30 +122,43 @@ const updateCommunity = async (req: Request, res: Response) => {
     let image;
     let banner;
     const community: community | null = await Community.findById({ _id });
-    if (//validacion de permisos para actualizar
+    if (
+      //validacion de permisos para actualizar
       community?.owner_id == data.userID ||
       community?.admins_id == data.userID
     ) {
-      if (!community || community.isActive == false) {//validacion de existencia 
+      if (!community || community.isActive == false) {
+        //validacion de existencia
         return res.status(400).send({
           ok: false,
           mensaje: "Comunidad no encontrada",
           message: "Community not found",
         });
-      } else {//si existe
+      } else {
+        //si existe
         const img = await guardarImagenes(req);
         const { imgUrls } = img;
         const { bannerUrl } = img;
-        if(community.banner==null ){ banner=bannerUrl;}//si no hay banner en firebase
-        else{deleteImage(community.banner); banner=bannerUrl;}//si hay banner en firebase
-      
-        if(community.img==null || community.img.length<2){image=imgUrls[0];} //si no hay img en firebase
-        else{deleteImage(community.img);image=imgUrls[0];}//si hay img en firebase
+        if (community.banner == null) {
+          banner = bannerUrl;
+        } //si no hay banner en firebase
+        else {
+          deleteImage(community.banner);
+          banner = bannerUrl;
+        } //si hay banner en firebase
+
+        if (community.img == null || community.img.length < 2) {
+          image = imgUrls[0];
+        } //si no hay img en firebase
+        else {
+          deleteImage(community.img);
+          image = imgUrls[0];
+        } //si hay img en firebase
 
         const communityUpdate: community | null =
           await Community.findByIdAndUpdate(
             _id,
-            { ...data, img: image, banner:banner },
+            { ...data, img: image, banner: banner },
             { new: true }
           );
         res.status(200).send({
@@ -151,7 +168,8 @@ const updateCommunity = async (req: Request, res: Response) => {
           message: "Community updated successfully",
         });
       }
-    } else {//sin permisos
+    } else {
+      //sin permisos
       res.status(400).send({
         ok: true,
         mensaje: "Solo el dueño y los admins pueden actualizar la comunidad",
@@ -229,7 +247,7 @@ const leaveCommunity = async (req: Request, res: Response) => {
     res.status(200).send({
       ok: true,
       join,
-      mensaje: "dejaste la comunidad con exito",
+      mensaje: "Abandonaste la comunidad con exito",
       message: "You leave the community successfully",
     });
   } catch (error) {
@@ -283,7 +301,7 @@ const joinCommunity = async (req: Request, res: Response) => {
     if (community && member) {
       if (community.bannedUsers_id.includes(member._id)) {
         res.status(418).send({
-          ok: true,
+          ok: false,
           mensaje: "Estás baneado de esta comunidad",
           message: "You are banned from this community",
         });
@@ -452,7 +470,7 @@ const createChatCommunity = async (req: Request, res: Response) => {
       const create: communitychats = await new CommunityChats({
         ...data,
         img: imgUrls[0] ? imgUrls[0] : null,
-        banner:bannerUrl[0]? bannerUrl[0]:null,
+        banner: bannerUrl[0] ? bannerUrl[0] : null,
       });
 
       await create.save();

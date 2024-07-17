@@ -13,6 +13,7 @@ communityRouter.post(
 communityRouter.post("/createCommunity", upload, community.createCommunity);
 communityRouter.post("/joinChatCommunity/:_id", community.joinChatCommunity);
 communityRouter.post("/joinCommunity/:_id", community.joinCommunity);
+communityRouter.post("/leaveCommunity/:_id", community.leaveCommunity);
 
 //put
 communityRouter.put("/updateCommunity/:_id", upload, community.updateCommunity);
@@ -26,14 +27,22 @@ communityRouter.put(
 ///delete
 communityRouter.delete("/deleteCommunity/:_id", community.deleteCommunity);
 communityRouter.delete("/banFromCommunity/:_id", community.banFromCommunity);
-communityRouter.delete("/leaveCommunity/:_id", community.leaveCommunity);
-communityRouter.delete("/leaveChatCommunity/:_id",community.leaveChatCommunity);
-communityRouter.delete( "/deleteCommunityChat/:_id",community.deleteCommunityChat);
+communityRouter.delete(
+  "/leaveChatCommunity/:_id",
+  community.leaveChatCommunity
+);
+communityRouter.delete(
+  "/deleteCommunityChat/:_id",
+  community.deleteCommunityChat
+);
 
 //get
 communityRouter.get("/getCommunities", community.getCommunities);
-communityRouter.get("/getCommunity/_id", community.getCommunity);
-communityRouter.get("/getCommunitiesForCategories",community.getCommunitiesForCategories);
+communityRouter.get("/getCommunity/:_id", community.getCommunity);
+communityRouter.get(
+  "/getCommunitiesForCategories",
+  community.getCommunitiesForCategories
+);
 communityRouter.get("/getCommunityChats/:_id", community.getCommunityChats);
 communityRouter.get("/hotCommunity", community.hotCommunity);
 

@@ -7,6 +7,7 @@ export interface comments extends mongoose.Document {
   isDeleted: boolean;
   isActive: boolean;
   createdAt: string;
+  commentDate: string;
 }
 
 const commentsSchema = new Schema({
@@ -36,6 +37,10 @@ createdAt: {
     type: String,
     default: new Date().toISOString(),
 },
+  commentDate: {
+    type: String,
+    require: true,
+  },
 });
 
 export default model<comments>("Comments", commentsSchema);

@@ -12,8 +12,10 @@ postRouter.post("/responseComment", post.responseComment);
 
 //get
 postRouter.get("/getAllPostByCommunity/:community", post.getAllPostByCommunity);
+postRouter.get("/getPostById/:_id", post.getPostById);
 postRouter.get("/userProfile/:_id", post.userProfile);
 postRouter.get("/timeLine/:_id", post.timeLine);
+postRouter.get("/getCommentsByPost/:_id", post.getCommentsByPost);
 
 
 //put
