@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import User, { user } from "../model/user";
 import Roles, { role } from "../model/role";
 import { encrypt } from "../helper/password-bcrypts";
-import { guardarImagenes, deleteImage, perfiles } from "./uploadImage";
+import { deleteImage, perfiles } from "./uploadImage";
 
 const createUser = async (req: Request, res: Response) => {
   try {
