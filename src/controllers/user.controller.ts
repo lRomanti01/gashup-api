@@ -91,7 +91,7 @@ const updateUser = async (req: Request, res: Response) => {
     let profilePictur;
 
     if(user.banner==null){ banner=bannerUrl;}//si no hay banner en firebase
-    else if(req.files['banner'] != user.banner ){deleteImage(user.banner); banner=bannerUrl;}//si hay banner en firebase
+    else if(data.banner != user.banner ){deleteImage(user.banner); banner=bannerUrl;}//si hay banner en firebase
     else if(!data.banner && req.files['banner'] == null && user.banner!=null){deleteImage(user.banner); banner=null;}//si se queda sin banner
     else if(data.banner){banner=data.banner;}//dejar banner
 

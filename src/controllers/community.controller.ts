@@ -139,12 +139,12 @@ const updateCommunity = async (req: Request, res: Response) => {
         let profilePictur;
     
         if(community.banner==null){ banner=bannerUrl;}//si no hay banner en firebase
-        else if(req.files['banner'] != community.banner ){deleteImage(community.banner); banner=bannerUrl;}//si hay banner en firebase
+        else if(data.banner != community.banner ){deleteImage(community.banner); banner=bannerUrl;}//si hay banner en firebase
         else if(!data.banner && req.files['banner'] == null && community.banner!=null){deleteImage(community.banner); banner=null;}//si se queda sin banner
         else if(data.banner){banner=data.banner;}//dejar banner
 
         if(community.img==null){profilePictur=imgUrl;} //si no hay img en firebase
-        else if(req.files['img'] != community.img  ){deleteImage(community.img);profilePictur=imgUrl;}//si hay img en firebase
+        else if(data.banner != community.img  ){deleteImage(community.img);profilePictur=imgUrl;}//si hay img en firebase
         else if(!data.img && req.files['img'] == null && community.img!=null){deleteImage(community.img);profilePictur=null;}//si se queda sin img
         else if(data.img){profilePictur=data.img;}//dejar img
 
