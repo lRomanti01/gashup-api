@@ -4,10 +4,10 @@ export interface comments extends mongoose.Document {
   description: string;
   user_id: Types.ObjectId;
   post_id: Types.ObjectId;
-  commentDate: string;
   isDeleted: boolean;
   isActive: boolean;
   createdAt: string;
+  commentDate: string;
 }
 
 const commentsSchema = new Schema({
