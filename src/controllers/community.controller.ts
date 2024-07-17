@@ -83,24 +83,27 @@ const getCommunity = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const { ...data } = req.body;
-    const commmunity = await Community.findById({ _id });
-    const user = await User.findOne({ _id: data.userID });
+    const commmunity = await Community.findById({ _id }).populate("members_id");
 
-    if (commmunity.bannedUsers_id.includes(user._id)) {
-      res.status(418).send({
-        ok: false,
-        data: commmunity,
-        mensaje: "usuario baneado",
-        message: "User banned",
-      });
-    } else {
-      res.status(200).send({
-        ok: true,
-        data: commmunity,
-        mensaje: "todas las comunidades",
-        message: "all communities",
-      });
+    if (data.user_id) {
+      const user = await User.findOne({ _id: data?.user_id });
+
+      if (commmunity.bannedUsers_id.includes(user._id)) {
+        return res.status(418).send({
+          ok: false,
+          data: commmunity,
+          mensaje: "usuario baneado",
+          message: "User banned",
+        });
+      }
     }
+
+    res.status(200).send({
+      ok: true,
+      data: commmunity,
+      mensaje: "todas las comunidades",
+      message: "all communities",
+    });
   } catch (error) {
     console.log(error);
     res.status(500).send({
@@ -116,11 +119,13 @@ const updateCommunity = async (req: Request, res: Response) => {
     const { _id } = req.params;
     const { ...data } = req.body;
     const community: community | null = await Community.findById({ _id });
-    if (//validacion de permisos para actualizar
+    if (
+      //validacion de permisos para actualizar
       community?.owner_id == data.userID ||
       community?.admins_id == data.userID
     ) {
-      if (!community || community.isActive == false) {//validacion de existencia 
+      if (!community || community.isActive == false) {
+        //validacion de existencia
         return res.status(400).send({
           ok: false,
           mensaje: "Comunidad no encontrada",
@@ -155,7 +160,8 @@ const updateCommunity = async (req: Request, res: Response) => {
           message: "Community updated successfully",
         });
       }
-    } else {//sin permisos
+    } else {
+      //sin permisos
       res.status(400).send({
         ok: true,
         mensaje: "Solo el dueño y los admins pueden actualizar la comunidad",
@@ -233,7 +239,7 @@ const leaveCommunity = async (req: Request, res: Response) => {
     res.status(200).send({
       ok: true,
       join,
-      mensaje: "dejaste la comunidad con exito",
+      mensaje: "Abandonaste la comunidad con exito",
       message: "You leave the community successfully",
     });
   } catch (error) {
@@ -287,7 +293,7 @@ const joinCommunity = async (req: Request, res: Response) => {
     if (community && member) {
       if (community.bannedUsers_id.includes(member._id)) {
         res.status(418).send({
-          ok: true,
+          ok: false,
           mensaje: "Estás baneado de esta comunidad",
           message: "You are banned from this community",
         });
