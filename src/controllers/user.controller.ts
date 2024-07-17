@@ -92,16 +92,17 @@ const updateUser = async (req: Request, res: Response) => {
 
     if(user.banner==null){ banner=bannerUrl;}//si no hay banner en firebase
     else if(req.files['banner'] != user.banner ){deleteImage(user.banner); banner=bannerUrl;}//si hay banner en firebase
-    else if(req.files['banner'] == null && user.banner!=null){deleteImage(user.banner); banner=null;}//si se queda sin banner
+    else if(!data.banner && req.files['banner'] == null && user.banner!=null){deleteImage(user.banner); banner=null;}//si se queda sin banner
+    else if(data.banner){banner=data.banner;}//dejar img
 
     if(user.img==null){profilePictur=imgUrl;} //si no hay img en firebase
     else if(data.img != user.img ){deleteImage(user.img);profilePictur=imgUrl;}//si hay img en firebase
-    else if(req.files['img'] == null && user.img!=null){deleteImage(user.img);profilePictur=null;}//si se queda sin img
-console.log(data.img);
-console.log(user.img)
+    else if(!data.img && req.files['img'] == null && user.img!=null){deleteImage(user.img);profilePictur=null; console.log("adios")}//si se queda sin img
+    else if(data.img){profilePictur=data.img;}//dejar img
+
     const update: user | null = await User.findByIdAndUpdate(
       id,
-      { ...data,img: profilePictur ? imgUrl : null,
+      { ...data,img:profilePictur? profilePictur:null,
         banner:banner? banner:null,},
       { new: true }
     );

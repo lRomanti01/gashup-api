@@ -149,7 +149,7 @@ const updateCommunity = async (req: Request, res: Response) => {
         const communityUpdate: community | null =
           await Community.findByIdAndUpdate(
             _id,
-            { ...data,img: profilePictur ? imgUrl : null,
+            { ...data,img: profilePictur ? profilePictur : null,
               banner:banner? banner:null,},
             { new: true }
           );
