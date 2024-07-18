@@ -83,7 +83,10 @@ const getCommunity = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const { ...data } = req.body;
-    const commmunity = await Community.findById({ _id }).populate("members_id");
+    const commmunity = await Community.findById({ _id })
+      .populate("members_id")
+      .populate("owner_id")
+      .populate("admins_id");
 
     if (data.user_id) {
       const user = await User.findOne({ _id: data?.user_id });
@@ -653,7 +656,7 @@ const hotCommunity = async (req: Request, res: Response) => {
   const topSixCommunities = commmunity.slice(0,6);
     res.status(200).send({
       ok: true,
-      topSixCommunities,
+      data: topSixCommunities,
       mensaje: "Comunidad destacada con exito",
       message: "Community featured successfully",
     });
