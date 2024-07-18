@@ -165,7 +165,7 @@ const deletePost = async (req: Request, res: Response) => {
   }
 };
 
-const timeLine = async (req, res) => {
+const timeLine = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const user = await User.findById(_id);
@@ -326,6 +326,7 @@ const comment = async (req: Request, res: Response) => {
       commentDate: calculateElapsedTime(newComment.commentDate),
     };
 
+
     res.status(200).send({
       ok: true,
       data: comment,
@@ -345,14 +346,29 @@ const comment = async (req: Request, res: Response) => {
 const getCommentsByPost = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
-    const comment = await Comments.find({ post_id: _id })
+    const comments = await Comments.find({ post_id: _id })
       .populate("user_id")
       .sort({ commentDate: -1 });
 
-    const mappedComments = comment.map((item) => ({
-      ...item.toObject(), // Convert Mongoose document to plain JavaScript object
-      commentDate: calculateElapsedTime(item.commentDate),
-    }));
+    // Convert Mongoose documents to plain JavaScript objects and map subcomments
+    const mappedComments = await Promise.all(
+      comments.map(async (comment) => {
+        const subComments = await SubComments.find({ comment_id: comment._id })
+          .populate("user_id")
+          .sort({ commentDate: -1 });
+
+        const mappedSubComments = subComments.map((subComment) => ({
+          ...subComment.toObject(),
+          commentDate: calculateElapsedTime(subComment.commentDate),
+        }));
+
+        return {
+          ...comment.toObject(),
+          commentDate: calculateElapsedTime(comment.commentDate),
+          subComments: mappedSubComments,
+        };
+      })
+    );
 
     res.status(200).send({
       ok: true,
@@ -373,13 +389,49 @@ const getCommentsByPost = async (req: Request, res: Response) => {
 const responseComment = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
-    const newComment: subcomments = await new SubComments({ ...data });
-    newComment.save();
+    const newComment: subcomments = await new SubComments({
+      ...data,
+      commentDate: moment().format("YYYY-MM-DD HH:mm:ss"),
+    });
+    await newComment.save();
+
+    const comment = {
+        ...newComment.toObject(),
+        commentDate: calculateElapsedTime(newComment.commentDate),
+    };
     res.status(200).send({
       ok: true,
-      data: newComment,
-      mensaje: "comentario realizado",
+      data: comment,
+      mensaje: "Comentario realizado",
       message: "comment done",
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error,
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+    });
+  }
+};
+
+const getSubCommentsByComment = async (req: Request, res: Response) => {
+  try {
+    const { _id } = req.params;
+    const comment = await SubComments.find({ comment_id: _id })
+      .populate("user_id")
+      .sort({ commentDate: -1 });
+
+    const mappedComments = comment.map((item) => ({
+      ...item.toObject(), // Convert Mongoose document to plain JavaScript object
+      commentDate: calculateElapsedTime(item.commentDate),
+    }));
+
+    res.status(200).send({
+      ok: true,
+      data: mappedComments,
+      mensaje: "Comentarios encontrados correctamente",
+      message: "Comments found successfully",
     });
   } catch (error) {
     res.status(500).json({
@@ -423,6 +475,38 @@ const likePost = async (req: Request, res: Response) => {
   }
 };
 
+const likeComment = async (req: Request, res: Response) => {
+  try {
+    const { _id } = req.params;
+    const { ...data } = req.body;
+    const comment = await Comments.findById(_id);
+    if (!comment.user_likes.includes(data.user)) {
+      await comment.updateOne({ $push: { user_likes: data.user } });
+      res.status(200).send({
+        ok: true,
+        data: true,
+        mensaje: "has dado like a este comentario",
+        message: "you liked this comment",
+      });
+    } else {
+      await comment.updateOne({ $pull: { user_likes: data.user } });
+      res.status(200).send({
+        ok: true,
+        data: false,
+        mensaje: "has quitado el like a este comentario",
+        message: "has removed the like from this comment",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error,
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+    });
+  }
+};
+
 export {
   createPost,
   getAllPostByCommunity,
@@ -435,4 +519,6 @@ export {
   likePost,
   getPostById,
   getCommentsByPost,
+  getSubCommentsByComment,
+  likeComment,
 };

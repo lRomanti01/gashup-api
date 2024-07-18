@@ -17,12 +17,12 @@ postRouter.get("/getPostById/:_id", post.getPostById);
 postRouter.get("/userProfile/:_id", post.userProfile);
 postRouter.get("/timeLine/:_id", post.timeLine);
 postRouter.get("/getCommentsByPost/:_id", post.getCommentsByPost);
-
+postRouter.get("/getSubCommentsByComment/:_id", post.getSubCommentsByComment);
 
 //put
 postRouter.put("/updatePost/:id", post.updatePost);
 postRouter.put("/likePost/:_id", post.likePost);
-
+postRouter.put("/likeComment/:_id", post.likeComment);
 
 //delete
 postRouter.delete("/deletePost/:_id", post.deletePost);

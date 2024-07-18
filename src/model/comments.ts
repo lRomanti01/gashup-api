@@ -1,10 +1,12 @@
 import mongoose, { Schema, model, Types} from "mongoose";
 
 export interface comments extends mongoose.Document {
+  _id?: string;
   description: string;
   user_id: Types.ObjectId;
   post_id: Types.ObjectId;
   commentDate: string;
+  user_likes: Array<Types.ObjectId>;
 }
 
 const commentsSchema = new Schema({
@@ -25,6 +27,11 @@ const commentsSchema = new Schema({
   commentDate: {
     type: String,
     require: true,
+  },
+  user_likes: {
+    type: Array<Schema.Types.ObjectId>,
+    ref: "User",
+    require: false,
   },
 });
 
