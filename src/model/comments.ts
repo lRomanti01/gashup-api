@@ -5,6 +5,9 @@ export interface comments extends mongoose.Document {
   description: string;
   user_id: Types.ObjectId;
   post_id: Types.ObjectId;
+  isDeleted: boolean;
+  isActive: boolean;
+  createdAt: string;
   commentDate: string;
   user_likes: Array<Types.ObjectId>;
 }
@@ -24,6 +27,18 @@ const commentsSchema = new Schema({
     ref: "Post",
     require: true,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false
+},
+isActive: {
+    type: Boolean,
+    default: true
+},
+createdAt: {
+    type: String,
+    default: new Date().toISOString(),
+},
   commentDate: {
     type: String,
     require: true,

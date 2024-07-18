@@ -2,10 +2,8 @@ import { Request, Response } from "express";
 import Community, { community } from "../model/community";
 import CommunityChats, { communitychats } from "../model/communityChats";
 import User, { user } from "../model/user";
-import CommunityCategory, {
-  communitycategory,
-} from "../model/communityCategory";
-import { guardarImagenes, deleteImage } from "./uploadImage";
+import CommunityCategory, {communitycategory,} from "../model/communityCategory";
+import { guardarImagenes, deleteImage, perfiles } from "./uploadImage";
 
 const createCommunity = async (req: Request, res: Response) => {
   try {
@@ -30,15 +28,16 @@ const createCommunity = async (req: Request, res: Response) => {
         message: "Community name not available",
       });
     } else {
-      const img = await guardarImagenes(req);
-      const { imgUrls } = img;
+      const img = await perfiles(req);
+      const { imgUrl } = img;
       const { bannerUrl } = img;
 
       const create: community = await new Community({
         ...data,
         communityCategory_id: IDs,
-        img: imgUrls[0] ? imgUrls[0] : null,
-        banner: bannerUrl ? bannerUrl : null,
+        img: imgUrl ? imgUrl : null,
+        banner:bannerUrl? bannerUrl:null,
+        
       });
       await create.save();
 
@@ -119,8 +118,6 @@ const updateCommunity = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const { ...data } = req.body;
-    let image;
-    let banner;
     const community: community | null = await Community.findById({ _id });
     if (
       //validacion de permisos para actualizar
@@ -134,31 +131,28 @@ const updateCommunity = async (req: Request, res: Response) => {
           mensaje: "Comunidad no encontrada",
           message: "Community not found",
         });
-      } else {
-        //si existe
-        const img = await guardarImagenes(req);
-        const { imgUrls } = img;
+      } else {//si existe
+        const img = await perfiles(req);
+        const { imgUrl } = img;
         const { bannerUrl } = img;
-        if (community.banner == null) {
-          banner = bannerUrl;
-        } //si no hay banner en firebase
-        else {
-          deleteImage(community.banner);
-          banner = bannerUrl;
-        } //si hay banner en firebase
+        let banner;
+        let profilePictur;
+    
+        if(community.banner==null){ banner=bannerUrl;}//si no hay banner en firebase
+        else if(data.banner != community.banner ){deleteImage(community.banner); banner=bannerUrl;}//si hay banner en firebase
+        else if(!data.banner && req.files['banner'] == null && community.banner!=null){deleteImage(community.banner); banner=null;}//si se queda sin banner
+        else if(data.banner){banner=data.banner;}//dejar banner
 
-        if (community.img == null || community.img.length < 2) {
-          image = imgUrls[0];
-        } //si no hay img en firebase
-        else {
-          deleteImage(community.img);
-          image = imgUrls[0];
-        } //si hay img en firebase
+        if(community.img==null){profilePictur=imgUrl;} //si no hay img en firebase
+        else if(data.banner != community.img  ){deleteImage(community.img);profilePictur=imgUrl;}//si hay img en firebase
+        else if(!data.img && req.files['img'] == null && community.img!=null){deleteImage(community.img);profilePictur=null;}//si se queda sin img
+        else if(data.img){profilePictur=data.img;}//dejar img
 
         const communityUpdate: community | null =
           await Community.findByIdAndUpdate(
             _id,
-            { ...data, img: image, banner: banner },
+            { ...data,img: profilePictur ? profilePictur : null,
+              banner:banner? banner:null,},
             { new: true }
           );
         res.status(200).send({
@@ -464,13 +458,13 @@ const createChatCommunity = async (req: Request, res: Response) => {
         message: "chat name not available",
       });
     } else {
-      const img = await guardarImagenes(req);
-      const { imgUrls } = img;
+      const img = await perfiles(req);
+      const { imgUrl } = img;
       const { bannerUrl } = img;
       const create: communitychats = await new CommunityChats({
         ...data,
-        img: imgUrls[0] ? imgUrls[0] : null,
-        banner: bannerUrl[0] ? bannerUrl[0] : null,
+        img: imgUrl ? imgUrl : null,
+        banner:bannerUrl? bannerUrl:null,
       });
 
       await create.save();
@@ -638,6 +632,41 @@ const updateCommunityChat = async (req: Request, res: Response) => {
     });
   }
 };
+const hotCommunity = async (req: Request, res: Response) => {
+  try {
+    const commmunity = await Community.find({ isActive: true });
+    const calculateHotScore = commmunity => {
+      const createdAt = commmunity.created_at;
+      const members = commmunity.members_id.length||0;
+      const ageInHours = (Date.now() - new Date(createdAt).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
+      return (members / (ageInHours + 2));
+  };
+  // Calcular la puntuación de "Hot" para cada publicación
+  let n=0;
+  commmunity.forEach(commmunity => {
+    commmunity.hotScore = calculateHotScore(commmunity);n++; console.log(commmunity.hotScore)
+  });
+  
+
+  // Ordenar las publicaciones por la puntuación de "Hot"
+  commmunity.sort((a, b) => b.hotScore - a.hotScore);
+  const topSixCommunities = commmunity.slice(0,6);
+    res.status(200).send({
+      ok: true,
+      topSixCommunities,
+      mensaje: "Comunidad destacada con exito",
+      message: "Community featured successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      ok: false,
+      error,
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+    });
+  }
+};
 export {
   getCommunitiesForCategories,
   createCommunity,
@@ -655,4 +684,5 @@ export {
   leaveChatCommunity,
   updateCommunityChat,
   getCommunityChats,
+  hotCommunity,
 };

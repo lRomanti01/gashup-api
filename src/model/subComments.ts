@@ -6,6 +6,10 @@ export interface subcomments extends mongoose.Document {
   comment_id: Types.ObjectId;
   commentDate: string;
   user_likes: Array<Types.ObjectId>;
+  post_id: Types.ObjectId;
+  isDeleted: boolean;
+  isActive: boolean;
+  createdAt: string;
 }
 
 const subcommentsSchema = new Schema({
@@ -32,6 +36,19 @@ const subcommentsSchema = new Schema({
     ref: "User",
     require: false,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false
+},
+isActive: {
+    type: Boolean,
+    default: true
+},
+createdAt: {
+    type: String,
+    default: new Date().toISOString(),
+},
 });
+
 
 export default model<subcomments>("SubComments", subcommentsSchema);
