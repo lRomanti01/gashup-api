@@ -104,8 +104,8 @@ const getCommunity = async (req: Request, res: Response) => {
     res.status(200).send({
       ok: true,
       data: commmunity,
-      mensaje: "todas las comunidades",
-      message: "all communities",
+      mensaje: "Todas las comunidades",
+      message: "All communities",
     });
   } catch (error) {
     console.log(error);
