@@ -79,43 +79,71 @@ const getCommunities = async (req: Request, res: Response) => {
   }
 };
 
-const getCommunity = async (req: Request, res: Response) => {
+const getCommunity = async (req, res) => {
   try {
     const { _id } = req.params;
     const { ...data } = req.body;
-    const commmunity = await Community.findById({ _id })
+
+    // Obtener todas las comunidades activas para sus hotScores
+    const communities = await Community.find({ isActive: true });
+
+    // Crear un array con los hotScores de todas las comunidades
+    const hotScoresArray = communities.map((community) => community.hotScore);
+
+    // Ordenar el array de hotScores en orden descendente
+    hotScoresArray.sort((a, b) => b - a);
+
+    // Obtener la comunidad específica
+    const community = await Community.findById(_id)
       .populate("members_id")
       .populate("owner_id")
       .populate("admins_id");
 
+    if (!community) {
+      return res.status(404).send({
+        ok: false,
+        mensaje: "Comunidad no encontrada",
+        message: "Community not found",
+      });
+    }
+
     if (data.user_id) {
       const user = await User.findOne({ _id: data?.user_id });
 
-      if (commmunity.bannedUsers_id.includes(user._id)) {
+      if (community.bannedUsers_id.includes(user._id)) {
         return res.status(418).send({
           ok: false,
-          data: commmunity,
-          mensaje: "usuario baneado",
+          data: community,
+          mensaje: "Usuario baneado",
           message: "User banned",
         });
       }
     }
 
+    // Obtener el hotScore de la comunidad específica
+    const specificCommunityHotScore = community.hotScore;
+
+    // Encontrar la posición del hotScore de la comunidad específica en el array
+    const rango = hotScoresArray.indexOf(specificCommunityHotScore) + 1;
+
     res.status(200).send({
       ok: true,
-      data: commmunity,
-      mensaje: "Todas las comunidades",
-      message: "All communities",
+      data: community,
+      Rank:rango,
+      mensaje: "Comunidad obtenida con éxito",
+      message: "Community retrieved successfully",
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
+      ok: false,
       mensaje: "¡Ups! Algo salió mal",
       message: "Ups! Something went wrong",
       error,
     });
   }
 };
+
 
 const updateCommunity = async (req: Request, res: Response) => {
   try {
@@ -635,29 +663,37 @@ const updateCommunityChat = async (req: Request, res: Response) => {
     });
   }
 };
-const hotCommunity = async (req: Request, res: Response) => {
+const hotCommunity = async (req, res) => {
   try {
-    const commmunity = await Community.find({ isActive: true });
-    const calculateHotScore = commmunity => {
-      const createdAt = commmunity.created_at;
-      const members = commmunity.members_id.length||0;
-      const ageInHours = (Date.now() - new Date(createdAt).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
-      return (members / (ageInHours + 2));
-  };
-  // Calcular la puntuación de "Hot" para cada publicación
-  let n=0;
-  commmunity.forEach(commmunity => {
-    commmunity.hotScore = calculateHotScore(commmunity);n++; console.log(commmunity.hotScore)
-  });
-  
+    const communities = await Community.find({ isActive: true });
 
-  // Ordenar las publicaciones por la puntuación de "Hot"
-  commmunity.sort((a, b) => b.hotScore - a.hotScore);
-  const topSixCommunities = commmunity.slice(0,6);
+    const calculateHotScore = (community) => {
+      const createdAt = community.created_at; // Asegúrate de usar el campo correcto de tu esquema
+      const members = community.members_id.length || 0;
+      const ageInHours = (Date.now() - new Date(createdAt).getTime()) / 36e5;
+      return (members / (ageInHours + 2));
+    };
+
+    // Calcular la puntuación de "Hot" para cada comunidad
+    communities.forEach((community) => {
+      community.hotScore = calculateHotScore(community);
+    });
+
+    // Ordenar las comunidades por la puntuación de "Hot"
+    communities.sort((a, b) => b.hotScore - a.hotScore);
+    const topSixCommunities = communities.slice(0, 6);
+
+    // Actualizar las comunidades en la base de datos
+    const updatePromises = communities.map((community) => {
+      return Community.findByIdAndUpdate(community._id, { hotScore: community.hotScore }, { new: true });
+    });
+
+    await Promise.all(updatePromises);
+
     res.status(200).send({
       ok: true,
       data: topSixCommunities,
-      mensaje: "Comunidad destacada con exito",
+      mensaje: "Comunidad destacada con éxito",
       message: "Community featured successfully",
     });
   } catch (error) {
@@ -670,6 +706,7 @@ const hotCommunity = async (req: Request, res: Response) => {
     });
   }
 };
+
 export {
   getCommunitiesForCategories,
   createCommunity,
