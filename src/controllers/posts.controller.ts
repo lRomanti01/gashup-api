@@ -288,13 +288,12 @@ const userProfile = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const user = await User.findById(_id);
-    const { password, isActive, isDeleted, ...others } = user;
 
     const postUsuario = await Post.find({ user_id: user._id });
 
     res.status(200).send({
       ok: true,
-      others,
+      user,
       postUsuario,
       mensaje: "Post del usuario",
       message: "Post of the user",
