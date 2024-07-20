@@ -489,6 +489,7 @@ const createChatCommunity = async (req: Request, res: Response) => {
         message: "chat name not available",
       });
     } else {
+      
       const img = await perfiles(req);
       const { imgUrl } = img;
       const { bannerUrl } = img;
