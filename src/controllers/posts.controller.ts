@@ -41,7 +41,7 @@ const createPost = async (req: Request, res: Response) => {
 const getAllPostByCommunity = async (req: Request, res: Response) => {
   try {
     const { community } = req.params;
-    const posts = await Post.find({ community })
+    const posts = await Post.find({ community, isActive: true, isDeleted: false })
       .populate("community")
       .populate("user")
       .sort({ postDate: -1 });
@@ -111,11 +111,11 @@ const getPostById = async (req: Request, res: Response) => {
 
 const updatePost = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { _id } = req.params;
     const { ...data } = req.body;
 
     const post: post | null = await Post.findByIdAndUpdate(
-      id,
+      _id,
       { ...data },
       { new: true }
     );
@@ -139,10 +139,10 @@ const updatePost = async (req: Request, res: Response) => {
 
 const deletePost = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { _id } = req.params;
 
     const post: post | null = await Post.findByIdAndUpdate(
-      id,
+      _id,
       { isDeleted: true, isActive: false },
       { new: true }
     );
@@ -270,7 +270,7 @@ const timeLine = async (req: Request, res: Response) => {
 
     res.status(200).json({
       ok: true,
-      orden: combinedFeed,
+      data: combinedFeed,
       mensaje: "Publicaciones de amigos y comunidades",
       message: "Posts of friends and communities",
     });

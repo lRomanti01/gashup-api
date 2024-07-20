@@ -19,7 +19,7 @@ postRouter.get("/getCommentsByPost/:_id", post.getCommentsByPost);
 postRouter.get("/getSubCommentsByComment/:_id", post.getSubCommentsByComment);
 
 //put
-postRouter.put("/updatePost/:id", post.updatePost);
+postRouter.put("/updatePost/:_id", post.updatePost);
 postRouter.put("/updateComment/:commentId", post.updateComment);//documentar
 postRouter.put("/updateResponseComment/:responseCommentId", post.updateResponseComment);//documentar
 postRouter.put("/likePost/:_id", post.likePost);

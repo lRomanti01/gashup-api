@@ -61,7 +61,8 @@ const createCommunity = async (req: Request, res: Response) => {
 
 const getCommunities = async (req: Request, res: Response) => {
   try {
-    const commmunity = await Community.find({ isActive: true });
+    const commmunity = await Community.find({ isActive: true })
+    .populate("communityCategory_id");
 
     res.status(200).send({
       ok: true,
@@ -128,8 +129,7 @@ const getCommunity = async (req, res) => {
 
     res.status(200).send({
       ok: true,
-      data: community,
-      Rank:rango,
+      data: { ...community.toJSON(), rank: rango },
       mensaje: "Comunidad obtenida con éxito",
       message: "Community retrieved successfully",
     });
