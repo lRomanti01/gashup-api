@@ -175,7 +175,8 @@ const timeLine = async (req: Request, res: Response) => {
       user.followers.map((IDfriend) => 
         Post.find({ user: IDfriend, isActive: true })
           .populate("community")
-          .populate("user")
+          .populate("user"),
+         // calculateElapsedTime(Post.postDate),
       )
     );
 

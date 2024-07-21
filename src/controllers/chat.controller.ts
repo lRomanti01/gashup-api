@@ -16,6 +16,7 @@ const sendMessage = async (req: Request, res: Response) => {
         message: "Incomplete data"
       });
     }
+    const user = await User.findById({_id: userID })
 
     const db = getDatabase();
     const chatRef = ref(db, `${communityID}/${chat}`);
@@ -24,7 +25,9 @@ const sendMessage = async (req: Request, res: Response) => {
     const newMessageRef = push(chatRef);
 
     await set(newMessageRef, {
-      username: userID,
+      userID: userID,
+      username: user.name,
+      foto: user.img,
       message: message,
       publicationDate: moment().format("YYYY-MM-DD HH:mm:ss")
     });
@@ -116,13 +119,18 @@ const updateMessage = async (req: Request, res: Response) => {
       onValue(dbRef, async (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
+          const userID=[];
           const usernames = [];
+         const fotos = [];
           const messages = [];
   
           // Iterar sobre los mensajes y extraer los usernames y los datos de los mensajes
           for (const key in data) {
             if (data[key].username) {
               usernames.push(data[key].username);
+              userID.push(data[key].userID);
+              fotos.push(data[key].fotos);
+
             }
             if (data[key].message) {
               const mensaje = data[key].message;
@@ -130,16 +138,20 @@ const updateMessage = async (req: Request, res: Response) => {
             // Añadir el mensaje al array
             messages.push({
               id: key,
+              userID: data[key].ID,
+              usernames: data[key].username,
+              fotos: data[key].foto,
               message: data[key].message,
               publicationDate: data[key].publicationDate,
-              username: data[key].username
-            });
+            })
           }
+          
   
   
           // Encontrar usuarios por ID
           try {
-            const users = await User.find({ _id: { $in: usernames } });
+            const users = await User.find({ _id: { $in: userID } });
+            
   
             res.status(200).send({
               ok: true,
@@ -167,6 +179,7 @@ const updateMessage = async (req: Request, res: Response) => {
       });
     }
   };
+  
   
  
   
