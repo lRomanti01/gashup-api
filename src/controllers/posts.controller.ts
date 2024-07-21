@@ -353,6 +353,7 @@ const userProfile = async (req: Request, res: Response) => {
 
     res.status(200).send({
       ok: true,
+      user:user,
       posts: postsWithCommentsAndSubcomments,
       mensaje: "Post del usuario",
       message: "Post of the user",
