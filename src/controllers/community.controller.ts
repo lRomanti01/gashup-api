@@ -484,8 +484,15 @@ const getCommunityChats = async (req: Request, res: Response) => {
     // Buscar comunidades a las que el usuario es miembro
     const user: user = await User.findOne({ _id });
 
+    if (!user) {
+      return res.status(404).send({
+        ok: false,
+        mensaje: "Usuario no encontrado",
+        message: "User not found",
+      });
+    }
+
     const communities = await Community.find({ members_id: user._id });
-    console.log(user);
 
     if (communities.length > 0) {
       // Obtener IDs de las comunidades
@@ -494,9 +501,18 @@ const getCommunityChats = async (req: Request, res: Response) => {
       // Buscar chats en esas comunidades
       const chats = await CommunityChats.find({ community_id: { $in: communityIds } });
 
+      // Verificar si el usuario es miembro del chat
+      const chatsWithMembership = chats.map(chat => {
+        const isMember = chat.members_id.includes(user._id);
+        return {
+          ...chat.toObject(),
+          miembro: isMember ? true : false
+        };
+      });
+
       res.status(200).send({
         ok: true,
-        data: chats,
+        data: chatsWithMembership,
         mensaje: "todos los chats de las comunidades a las que eres miembro",
         message: "all community chats you are a member of",
       });
