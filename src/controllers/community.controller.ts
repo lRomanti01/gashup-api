@@ -389,7 +389,7 @@ const joinCommunity = async (req: Request, res: Response) => {
     });
   }
 };
-
+//colocarle para que tambien lo saque de los chats
 const banFromCommunity = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
