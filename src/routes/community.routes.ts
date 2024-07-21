@@ -10,6 +10,7 @@ communityRouter.post("/createCommunity", upload, community.createCommunity);
 communityRouter.post("/joinChatCommunity/:_id", community.joinChatCommunity);
 communityRouter.post("/joinCommunity/:_id", community.joinCommunity);
 communityRouter.post("/leaveCommunity/:_id", community.leaveCommunity);
+communityRouter.post("/createCategory", upload, community.createCategory);
 
 //put
 communityRouter.put("/updateCommunity/:_id", upload, community.updateCommunity);
@@ -37,6 +38,6 @@ communityRouter.get(
 );
 communityRouter.get("/getCommunityChats/:_id", community.getCommunityChats);
 communityRouter.get("/hotCommunity", community.hotCommunity);// documentar
-
+communityRouter.get("/getCategories", community.getCategories);// documentar;
 
 export default communityRouter;
