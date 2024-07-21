@@ -447,21 +447,28 @@ const assignAdmins = async (req: Request, res: Response) => {
 const getCommunityChats = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
-    const community: community | null = await Community.findById({ _id });
-    if (community?.isActive == true) {
-      const chats = await CommunityChats.find({ community_id: community._id });
+
+    // Buscar comunidades a las que el usuario es miembro
+    const communities = await Community.find({ members_id: _id });
+
+    if (communities.length > 0) {
+      // Obtener IDs de las comunidades
+      const communityIds = communities.map(community => community._id);
+
+      // Buscar chats en esas comunidades
+      const chats = await CommunityChats.find({ community_id: { $in: communityIds } });
 
       res.status(200).send({
         ok: true,
         data: chats,
-        mensaje: "todos los chats de la comunidad",
-        message: "all community chats",
+        mensaje: "todos los chats de las comunidades a las que eres miembro",
+        message: "all community chats you are a member of",
       });
     } else {
       res.status(404).send({
         ok: false,
-        mensaje: "no se encontro la comunidas",
-        message: "commmunity not found",
+        mensaje: "No se encontraron comunidades para el usuario",
+        message: "No communities found for the user",
       });
     }
   } catch (error) {
@@ -473,6 +480,7 @@ const getCommunityChats = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 const createChatCommunity = async (req: Request, res: Response) => {
   try {

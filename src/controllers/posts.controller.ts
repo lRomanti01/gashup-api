@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import User, { user } from "../model/user";
 import Roles, { role } from "../model/role";
-import Post, { post } from "../model/post";
+import Post, { post } from "../model/post"; // Importa la interfaz junto con el modelo
 import Community, { community } from "../model/community";
 import Comments, { comments } from "../model/comments";
 import SubComments, { subcomments } from "../model/subComments";
@@ -196,6 +196,11 @@ const timeLine = async (req: Request, res: Response) => {
     const friendscomments = await Comments.find({ post_id: { $in: friendsPosts.flat().map(post => post._id) } });
     const noCommunitycomments = await Comments.find({ post_id: { $in: nonUserCommunityPosts.map(post => post._id) } });
     const communitycomments = await Comments.find({ post_id: { $in: communityPosts.flat().map(post => post._id) } });
+
+    // SUBComentarios
+    const subfriendscomments = await SubComments.find({ comment_id: { $in: friendscomments.flat().map(comment => comment._id) } });
+    const subnoCommunitycomments = await Comments.find({ comment_id: { $in: nonUserCommunityPosts.map(comment => comment._id) } });
+    const subcommunitycomments = await Comments.find({ comment_id: { $in: communityPosts.flat().map(comment => comment._id) } });
   
     // Combinar todas las publicaciones
     const allPosts = [
@@ -281,6 +286,7 @@ const timeLine = async (req: Request, res: Response) => {
       {
         combinedFeed,
         comments: [...friendscomments, ...noCommunitycomments, ...communitycomments],
+        subcomment:[...subfriendscomments,...subnoCommunitycomments,...subcommunitycomments],
       },
     ]
     res.status(200).json({
@@ -306,7 +312,7 @@ const userProfile = async (req: Request, res: Response) => {
     const { _id } = req.params;
     const user = await User.findById(_id);
 
-    if(!user) {
+    if (!user) {
       return res.status(400).send({
         ok: false,
         mensaje: "Usuario no encontrado",
@@ -314,12 +320,39 @@ const userProfile = async (req: Request, res: Response) => {
       });
     }
 
+    // Obtén los posts del usuario
     const postUsuario = await Post.find({ user: user._id });
+
+    // Obtén los comentarios para los posts del usuario
+    const comments = await Comments.find({ post_id: { $in: postUsuario.map(post => post._id) } });
+
+    // Obtén los subcomentarios para los comentarios
+    const commentIds = comments.map(comment => comment._id);
+    const subcomments = await SubComments.find({ comment_id: { $in: commentIds } });
+
+    // Agrupa los subcomentarios por comment_id usando strings como claves
+    const subcommentsGroupedByComment = subcomments.reduce((acc, subcomment) => {
+      const commentIdStr = subcomment.comment_id.toString(); // Convertir ObjectId a string
+      if (!acc[commentIdStr]) {
+        acc[commentIdStr] = [];
+      }
+      acc[commentIdStr].push(subcomment);
+      return acc;
+    }, {} as { [key: string]: subcomments[] });
+
+    // Agrupa los comentarios por post_id e incluye los subcomentarios en cada comentario
+    const postsWithCommentsAndSubcomments = postUsuario.map(post => ({
+      ...post.toObject(),
+      comments: comments.filter(comment => comment.post_id.equals(post._id)).map(comment => ({
+        ...comment.toObject(),
+        subcomments: subcommentsGroupedByComment[comment._id.toString()] || [],
+      })),
+    }));
 
     res.status(200).send({
       ok: true,
-      user,
-      postUsuario,
+      user: user,
+      posts: postsWithCommentsAndSubcomments,
       mensaje: "Post del usuario",
       message: "Post of the user",
     });
@@ -332,6 +365,11 @@ const userProfile = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+
+
+
 
 const comment = async (req: Request, res: Response) => {
   try {
