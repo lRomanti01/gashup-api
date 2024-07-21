@@ -282,7 +282,7 @@ const timeLine = async (req: Request, res: Response) => {
   
     res.status(200).json({
       ok: true,
-      data: { combinedFeed, friendscomments, noCommunitycomments, communitycomments },
+      data: { ...combinedFeed, friendscomments, noCommunitycomments, communitycomments },
       mensaje: "Publicaciones de amigos y comunidades",
       message: "Posts of friends and communities",
     });
@@ -303,7 +303,15 @@ const userProfile = async (req: Request, res: Response) => {
     const { _id } = req.params;
     const user = await User.findById(_id);
 
-    const postUsuario = await Post.find({ user_id: user._id });
+    if(!user) {
+      return res.status(400).send({
+        ok: false,
+        mensaje: "Usuario no encontrado",
+        message: "User not found",
+      });
+    }
+
+    const postUsuario = await Post.find({ user: user._id });
 
     res.status(200).send({
       ok: true,
