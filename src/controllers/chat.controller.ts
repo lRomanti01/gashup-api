@@ -1,5 +1,6 @@
-import { getDatabase, ref, push, set , update, remove, get, child} from "firebase/database";
+import { getDatabase, ref, push, set , update, remove,onValue } from "firebase/database";
 import { Request, Response } from "express";
+import User, { user } from "../model/user";
 import moment from "moment";
 
 const sendMessage = async (req: Request, res: Response) => {
@@ -108,28 +109,56 @@ const updateMessage = async (req: Request, res: Response) => {
       const { communityID, chatID } = req.params;
   
       const db = getDatabase();
-      const dbRef = ref(db);
-      const snapshot = await get(child(dbRef, `${communityID}/${chatID}`));
+      const dbRef = ref(db, `${communityID}/${chatID}`);
   
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        const usernames = [];
+      onValue(dbRef, async (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const usernames = [];
   
-        // Iterar sobre los mensajes y extraer los usernames
-        for (const key in data) {
-          if (data[key].username) {
-            usernames.push(data[key].username);
+          // Iterar sobre los mensajes y extraer los usernames
+          for (const key in data) {
+            if (data[key].username) {
+              usernames.push(data[key].username);
+            }
+            if (data[key].message) {
+              const mensaje = data[key].message;
+              console.log(mensaje);  // Imprime el mensaje en la consola
+            }
           }
-        }
+          // Encontrar usuarios por ID
+          try {
+            const users = await User.find({ _id: { $in: usernames } });            
   
-        res.status(200).send({
-          ok: true,
-          datos: data,
-          usernames: usernames,
-          mensaje: "Mensajes obtenidos",
-          message: "Messages retrieved"
+            res.status(200).send({
+              ok: true,
+              datos: data,
+              users: users,
+              mensaje: "Mensajes obtenidos",
+              message: "Messages retrieved"
+            });
+          } catch (error) {
+            console.error(error);
+            res.status(500).send({
+              mensaje: "¡Ups! Algo salió mal al buscar usuarios",
+              message: "Ups! Something went wrong while fetching users",
+              error: error.message
+            });
+          }
+        } else {
+          res.status(404).send({
+            mensaje: "No se encontraron mensajes",
+            message: "No messages found"
+          });
+        }
+      }, (error) => {
+        console.error(error);
+        res.status(500).send({
+          mensaje: "¡Ups! Algo salió mal",
+          message: "Ups! Something went wrong",
+          error: error.message
         });
-      } 
+      });
     } catch (error) {
       console.error(error);
       res.status(500).send({
@@ -139,6 +168,7 @@ const updateMessage = async (req: Request, res: Response) => {
       });
     }
   };
+  
   
 export { sendMessage, updateMessage, deleteMessage,getMessages};
 

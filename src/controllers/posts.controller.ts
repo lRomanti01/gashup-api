@@ -168,10 +168,7 @@ const timeLine = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const user = await User.findById(_id);
-    
-    if (!user) throw new Error("User not found");
-  
-    const userCommunities = await Community.find({ members_id: _id });
+    const userCommunities = await Community.find({ members_id: user._id });
     const userCommunityIds = userCommunities.map((community) => community._id.toString());
   
     const friendsPosts = await Promise.all(
@@ -225,7 +222,8 @@ const timeLine = async (req: Request, res: Response) => {
   
     // Separar publicaciones
     const userCommunityPosts = allPosts.filter((post) =>
-      userCommunityIds.includes(String(post.community._id))
+      userCommunityIds.includes(String(post.community._id)),
+    
     );
     const friendsPostsOnly = allPosts.filter((post) =>
       user.followers.includes(String(post.user._id))
@@ -279,10 +277,15 @@ const timeLine = async (req: Request, res: Response) => {
         combinedFeed.push(otherCommunityPosts[otherCommunityIndex++]);
       }
     }
-  
+    const combinedData = [
+      {
+        combinedFeed,
+        comments: [...friendscomments, ...noCommunitycomments, ...communitycomments],
+      },
+    ]
     res.status(200).json({
       ok: true,
-      data: { combinedFeed, friendscomments, noCommunitycomments, communitycomments },
+      data: combinedData,
       mensaje: "Publicaciones de amigos y comunidades",
       message: "Posts of friends and communities",
     });
