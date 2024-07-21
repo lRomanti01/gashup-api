@@ -449,7 +449,10 @@ const getCommunityChats = async (req: Request, res: Response) => {
     const { _id } = req.params;
 
     // Buscar comunidades a las que el usuario es miembro
-    const communities = await Community.find({ members_id: _id });
+    const user: user = await User.findOne({ _id });
+
+    const communities = await Community.find({ members_id: user._id });
+    console.log(user);
 
     if (communities.length > 0) {
       // Obtener IDs de las comunidades
