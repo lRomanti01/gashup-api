@@ -4,11 +4,12 @@ import express = require('express');
 const chatRouter: express.Router = express.Router();
 
 //post
-chatRouter.post("/sendMessage/:communityID",chat.sendMessage);
+chatRouter.post("/sendMessage/:communityID/:chatID",chat.sendMessage);
 //put
 chatRouter.put("/updateMessage/:communityID/:chatID/:messageID",chat.updateMessage);
 //delete
 chatRouter.delete("/deleteMessage/:communityID/:chatID/:messageID",chat.deleteMessage);
 //get
+chatRouter.get("/getMessages/:communityID/:chatID",chat.getMessages);
 
 export default chatRouter;
