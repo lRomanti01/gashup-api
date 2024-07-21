@@ -322,6 +322,7 @@ const userProfile = async (req: Request, res: Response) => {
 
     // Obtén los posts del usuario
     const postUsuario = await Post.find({ user: user._id }).populate("user")
+    .populate("community")
     ;
 
     // Obtén los comentarios para los posts del usuario
