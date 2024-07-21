@@ -104,6 +104,8 @@ const updateMessage = async (req: Request, res: Response) => {
     }
   };
   
+
+
   const getMessages = async (req: Request, res: Response) => {
     try {
       const { communityID, chatID } = req.params;
@@ -115,24 +117,33 @@ const updateMessage = async (req: Request, res: Response) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
           const usernames = [];
+          const messages = [];
   
-          // Iterar sobre los mensajes y extraer los usernames
+          // Iterar sobre los mensajes y extraer los usernames y los datos de los mensajes
           for (const key in data) {
             if (data[key].username) {
               usernames.push(data[key].username);
             }
             if (data[key].message) {
               const mensaje = data[key].message;
-              console.log(mensaje);  // Imprime el mensaje en la consola
             }
+            // Añadir el mensaje al array
+            messages.push({
+              id: key,
+              message: data[key].message,
+              publicationDate: data[key].publicationDate,
+              username: data[key].username
+            });
           }
+  
+  
           // Encontrar usuarios por ID
           try {
-            const users = await User.find({ _id: { $in: usernames } });            
+            const users = await User.find({ _id: { $in: usernames } });
   
             res.status(200).send({
               ok: true,
-              datos: data,
+               messages,
               users: users,
               mensaje: "Mensajes obtenidos",
               message: "Messages retrieved"
@@ -145,20 +156,8 @@ const updateMessage = async (req: Request, res: Response) => {
               error: error.message
             });
           }
-        } else {
-          res.status(404).send({
-            mensaje: "No se encontraron mensajes",
-            message: "No messages found"
-          });
         }
-      }, (error) => {
-        console.error(error);
-        res.status(500).send({
-          mensaje: "¡Ups! Algo salió mal",
-          message: "Ups! Something went wrong",
-          error: error.message
-        });
-      });
+      },);
     } catch (error) {
       console.error(error);
       res.status(500).send({
@@ -169,6 +168,7 @@ const updateMessage = async (req: Request, res: Response) => {
     }
   };
   
+ 
   
 export { sendMessage, updateMessage, deleteMessage,getMessages};
 
