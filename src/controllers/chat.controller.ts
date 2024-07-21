@@ -2,6 +2,7 @@ import { getDatabase, ref, push, set , update, remove,onValue } from "firebase/d
 import { Request, Response } from "express";
 import User, { user } from "../model/user";
 import moment from "moment";
+import { calculateElapsedTime } from "../helper/date";
 
 const sendMessage = async (req: Request, res: Response) => {
   try {
@@ -27,7 +28,7 @@ const sendMessage = async (req: Request, res: Response) => {
     await set(newMessageRef, {
       userID: userID,
       username: user.name,
-      foto: user.img,
+      img: user.img,
       message: message,
       publicationDate: moment().format("YYYY-MM-DD HH:mm:ss")
     });
@@ -121,7 +122,7 @@ const updateMessage = async (req: Request, res: Response) => {
           const data = snapshot.val();
           const userID=[];
           const usernames = [];
-         const fotos = [];
+          const fotos = [];
           const messages = [];
   
           // Iterar sobre los mensajes y extraer los usernames y los datos de los mensajes
@@ -136,6 +137,7 @@ const updateMessage = async (req: Request, res: Response) => {
               const mensaje = data[key].message;
             }
             // Añadir el mensaje al array
+            data[key].publicationDate = calculateElapsedTime(data[key].publicationDate); // Calcular el tiempo transcurrido para cada publicación
             messages.push({
               id: key,
               userID: data[key].ID,
@@ -146,7 +148,7 @@ const updateMessage = async (req: Request, res: Response) => {
             })
           }
           
-  
+
   
           // Encontrar usuarios por ID
           try {
