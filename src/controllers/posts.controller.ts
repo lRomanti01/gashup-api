@@ -164,34 +164,37 @@ const deletePost = async (req: Request, res: Response) => {
   }
 };
 
+
 const timeLine = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const user = await User.findById(_id);
     const userCommunities = await Community.find({ members_id: user._id });
-    const userCommunityIds = userCommunities.map((community) => community._id.toString());
+    const userCommunityIds = userCommunities.map(community => community._id.toString());
 
     const friendsPosts = await Promise.all(
-      user.followers.map((IDfriend) => 
+      user.followers.map(IDfriend => 
         Post.find({ user: IDfriend, isActive: true })
-          .populate("community")
-          .populate("user"),
-         // calculateElapsedTime(Post.postDate),
+          .populate('community')
+          .populate('user')
       )
     );
 
     const communityPosts = await Promise.all(
-      userCommunityIds.map((communityID) => 
+      userCommunityIds.map(communityID => 
         Post.find({ community: communityID, isActive: true, user: { $nin: user.followers } })
-          .populate("community")
-          .populate("user")
+          .populate('community')
+          .populate('user')
       )
     );
 
     const nonUserCommunityPosts = await Post.find({
-      community: { $nin: userCommunityIds }, isActive: true, user: { $nin: user.followers },
-    }).populate("community")
-      .populate("user");
+      community: { $nin: userCommunityIds },
+      isActive: true,
+      user: { $nin: user.followers }
+    })
+    .populate('community')
+    .populate('user');
 
     // Comentarios
     const friendscomments = await Comments.find({ post_id: { $in: friendsPosts.flat().map(post => post._id) } });
@@ -211,10 +214,10 @@ const timeLine = async (req: Request, res: Response) => {
       }
       acc[commentIdStr].push(subcomment);
       return acc;
-    }, {} as { [key: string]: subcomments[] });
+    }, {} as { [key: string]: typeof subfriendscomments });
 
     // Agrupar comentarios por post_id e incluir subcomentarios en cada comentario
-    const postsWithCommentsAndSubcomments = (posts: post[], comments: comments[], subcomments: subcomments[]) => 
+    const postsWithCommentsAndSubcomments = (posts, comments, subcomments) => 
       posts.map(post => ({
         ...post.toObject(),
         comments: comments.filter(comment => comment.post_id.equals(post._id)).map(comment => ({
@@ -240,22 +243,23 @@ const timeLine = async (req: Request, res: Response) => {
     // Calcular la puntuación de "Hot" para cada publicación
     allPosts.forEach((post) => {
       post.hotScore = calculateHotScore(post);
+      post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación
     });
 
     // Ordenar las publicaciones por la puntuación de "Hot"
     allPosts.sort((a, b) => b.hotScore - a.hotScore);
 
     // Separar publicaciones
-    const userCommunityPosts = postsWithCommentsAndSubcomments(allPosts.filter((post) =>
+    const userCommunityPosts = postsWithCommentsAndSubcomments(allPosts.filter(post =>
       userCommunityIds.includes(String(post.community._id)),
     ), communitycomments, subcommunitycomments);
 
-    const friendsPostsOnly = postsWithCommentsAndSubcomments(allPosts.filter((post) =>
+    const friendsPostsOnly = postsWithCommentsAndSubcomments(allPosts.filter(post =>
       user.followers.includes(String(post.user._id))
     ), friendscomments, subfriendscomments);
 
     const otherCommunityPosts = postsWithCommentsAndSubcomments(allPosts.filter(
-      (post) =>
+      post =>
         !userCommunityIds.includes(String(post.community._id)) &&
         !user.followers.includes(String(post.user._id))
     ), noCommunitycomments, subnoCommunitycomments);
@@ -323,6 +327,8 @@ const timeLine = async (req: Request, res: Response) => {
     });
   }
 };
+
+
 
 
 const userProfile = async (req: Request, res: Response) => {
