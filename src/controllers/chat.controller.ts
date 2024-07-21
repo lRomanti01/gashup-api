@@ -122,7 +122,7 @@ const updateMessage = async (req: Request, res: Response) => {
           const data = snapshot.val();
           const userID=[];
           const usernames = [];
-          const fotos = [];
+          const img = [];
           const messages = [];
   
           // Iterar sobre los mensajes y extraer los usernames y los datos de los mensajes
@@ -130,7 +130,7 @@ const updateMessage = async (req: Request, res: Response) => {
             if (data[key].username) {
               usernames.push(data[key].username);
               userID.push(data[key].userID);
-              fotos.push(data[key].fotos);
+              img.push(data[key].img);
 
             }
             if (data[key].message) {
@@ -142,7 +142,7 @@ const updateMessage = async (req: Request, res: Response) => {
               id: key,
               userID: data[key].ID,
               usernames: data[key].username,
-              fotos: data[key].foto,
+              img: data[key].img,
               message: data[key].message,
               publicationDate: data[key].publicationDate,
             })
