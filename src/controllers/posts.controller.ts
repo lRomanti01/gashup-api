@@ -321,7 +321,8 @@ const userProfile = async (req: Request, res: Response) => {
     }
 
     // Obtén los posts del usuario
-    const postUsuario = await Post.find({ user: user._id });
+    const postUsuario = await Post.find({ user: user._id }).populate("user")
+    ;
 
     // Obtén los comentarios para los posts del usuario
     const comments = await Comments.find({ post_id: { $in: postUsuario.map(post => post._id) } });
@@ -351,7 +352,6 @@ const userProfile = async (req: Request, res: Response) => {
 
     res.status(200).send({
       ok: true,
-      user: user,
       posts: postsWithCommentsAndSubcomments,
       mensaje: "Post del usuario",
       message: "Post of the user",
