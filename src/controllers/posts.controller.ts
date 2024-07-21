@@ -170,45 +170,64 @@ const timeLine = async (req: Request, res: Response) => {
     const user = await User.findById(_id);
     const userCommunities = await Community.find({ members_id: user._id });
     const userCommunityIds = userCommunities.map((community) => community._id.toString());
-  
+
     const friendsPosts = await Promise.all(
       user.followers.map((IDfriend) => 
-        Post.find({ user: IDfriend, isActive: true, })
+        Post.find({ user: IDfriend, isActive: true })
           .populate("community")
           .populate("user")
       )
     );
-  
+
     const communityPosts = await Promise.all(
       userCommunityIds.map((communityID) => 
-        Post.find({ community: communityID, isActive: true, user:{ $nin: user.followers } })
+        Post.find({ community: communityID, isActive: true, user: { $nin: user.followers } })
           .populate("community")
           .populate("user")
       )
     );
-  
+
     const nonUserCommunityPosts = await Post.find({
-      community: { $nin: userCommunityIds },isActive: true,user:{ $nin: user.followers },
+      community: { $nin: userCommunityIds }, isActive: true, user: { $nin: user.followers },
     }).populate("community")
       .populate("user");
-  
+
     // Comentarios
     const friendscomments = await Comments.find({ post_id: { $in: friendsPosts.flat().map(post => post._id) } });
     const noCommunitycomments = await Comments.find({ post_id: { $in: nonUserCommunityPosts.map(post => post._id) } });
     const communitycomments = await Comments.find({ post_id: { $in: communityPosts.flat().map(post => post._id) } });
 
-    // SUBComentarios
-    const subfriendscomments = await SubComments.find({ comment_id: { $in: friendscomments.flat().map(comment => comment._id) } });
-    const subnoCommunitycomments = await Comments.find({ comment_id: { $in: nonUserCommunityPosts.map(comment => comment._id) } });
-    const subcommunitycomments = await Comments.find({ comment_id: { $in: communityPosts.flat().map(comment => comment._id) } });
-  
-    // Combinar todas las publicaciones
+    // Subcomentarios
+    const subfriendscomments = await SubComments.find({ comment_id: { $in: friendscomments.map(comment => comment._id) } });
+    const subnoCommunitycomments = await SubComments.find({ comment_id: { $in: noCommunitycomments.map(comment => comment._id) } });
+    const subcommunitycomments = await SubComments.find({ comment_id: { $in: communitycomments.map(comment => comment._id) } });
+
+    // Agrupar subcomentarios por comment_id usando strings como claves
+    const subcommentsGroupedByComment = [...subfriendscomments, ...subnoCommunitycomments, ...subcommunitycomments].reduce((acc, subcomment) => {
+      const commentIdStr = subcomment.comment_id.toString(); // Convertir ObjectId a string
+      if (!acc[commentIdStr]) {
+        acc[commentIdStr] = [];
+      }
+      acc[commentIdStr].push(subcomment);
+      return acc;
+    }, {} as { [key: string]: subcomments[] });
+
+    // Agrupar comentarios por post_id e incluir subcomentarios en cada comentario
+    const postsWithCommentsAndSubcomments = (posts: post[], comments: comments[], subcomments: subcomments[]) => 
+      posts.map(post => ({
+        ...post.toObject(),
+        comments: comments.filter(comment => comment.post_id.equals(post._id)).map(comment => ({
+          ...comment.toObject(),
+          subcomments: subcommentsGroupedByComment[comment._id.toString()] || [],
+        })),
+      }));
+
     const allPosts = [
       ...communityPosts.flat(),
       ...friendsPosts.flat(),
       ...nonUserCommunityPosts,
     ];
-  
+
     // Función para calcular la puntuación de cada publicación
     const calculateHotScore = (post) => {
       const likes = post.user_likes.length || 0;
@@ -216,35 +235,36 @@ const timeLine = async (req: Request, res: Response) => {
         (Date.now() - new Date(post.postDate).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
       return likes / (ageInHours + 2);
     };
-  
+
     // Calcular la puntuación de "Hot" para cada publicación
     allPosts.forEach((post) => {
       post.hotScore = calculateHotScore(post);
     });
-  
+
     // Ordenar las publicaciones por la puntuación de "Hot"
     allPosts.sort((a, b) => b.hotScore - a.hotScore);
-  
+
     // Separar publicaciones
-    const userCommunityPosts = allPosts.filter((post) =>
+    const userCommunityPosts = postsWithCommentsAndSubcomments(allPosts.filter((post) =>
       userCommunityIds.includes(String(post.community._id)),
-    
-    );
-    const friendsPostsOnly = allPosts.filter((post) =>
+    ), communitycomments, subcommunitycomments);
+
+    const friendsPostsOnly = postsWithCommentsAndSubcomments(allPosts.filter((post) =>
       user.followers.includes(String(post.user._id))
-    );
-    const otherCommunityPosts = allPosts.filter(
+    ), friendscomments, subfriendscomments);
+
+    const otherCommunityPosts = postsWithCommentsAndSubcomments(allPosts.filter(
       (post) =>
         !userCommunityIds.includes(String(post.community._id)) &&
         !user.followers.includes(String(post.user._id))
-    );
-  
+    ), noCommunitycomments, subnoCommunitycomments);
+
     // Crear el feed combinado
     const combinedFeed = [];
     let userCommunityIndex = 0;
     let friendsIndex = 0;
     let otherCommunityIndex = 0;
-  
+
     while (
       userCommunityIndex < userCommunityPosts.length ||
       friendsIndex < friendsPostsOnly.length ||
@@ -258,7 +278,7 @@ const timeLine = async (req: Request, res: Response) => {
       ) {
         combinedFeed.push(userCommunityPosts[userCommunityIndex++]);
       }
-  
+
       // Agregar 4 posts de otras comunidades
       for (
         let i = 0;
@@ -267,12 +287,12 @@ const timeLine = async (req: Request, res: Response) => {
       ) {
         combinedFeed.push(otherCommunityPosts[otherCommunityIndex++]);
       }
-  
+
       // Agregar 2 posts de amigos
       for (let i = 0; i < 2 && friendsIndex < friendsPostsOnly.length; i++) {
         combinedFeed.push(friendsPostsOnly[friendsIndex++]);
       }
-  
+
       // Agregar 4 posts de otras comunidades
       for (
         let i = 0;
@@ -282,20 +302,16 @@ const timeLine = async (req: Request, res: Response) => {
         combinedFeed.push(otherCommunityPosts[otherCommunityIndex++]);
       }
     }
-    const combinedData = [
-      {
-        combinedFeed,
-        comments: [...friendscomments, ...noCommunitycomments, ...communitycomments],
-        subcomment:[...subfriendscomments,...subnoCommunitycomments,...subcommunitycomments],
-      },
-    ]
+
     res.status(200).json({
       ok: true,
-      data: combinedData,
+      data: {
+        combinedFeed,
+      },
       mensaje: "Publicaciones de amigos y comunidades",
       message: "Posts of friends and communities",
     });
-  
+
   } catch (error) {
     console.error(error); // Log the detailed error
     res.status(500).json({
@@ -305,7 +321,8 @@ const timeLine = async (req: Request, res: Response) => {
       message: "Ups! Something went wrong",
     });
   }
-}  
+};
+
 
 const userProfile = async (req: Request, res: Response) => {
   try {
