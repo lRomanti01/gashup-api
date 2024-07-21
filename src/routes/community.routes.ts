@@ -33,7 +33,7 @@ communityRouter.delete(
 communityRouter.get("/getCommunities", community.getCommunities);
 communityRouter.get("/getCommunity/:_id", community.getCommunity);
 communityRouter.get(
-  "/getCommunitiesForCategories",
+"/getCommunitiesForCategories",
   community.getCommunitiesForCategories
 );
 communityRouter.get("/getCommunityChats/:_id", community.getCommunityChats);
