@@ -10,8 +10,7 @@ import { guardarImagenes, deleteImage, perfiles } from "./uploadImage";
 const createCommunity = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
-    const categorias = data.communityCategory_id;
-    const array = categorias.split(",");
+    const array = data.communityCategory_id.split(",");
     const IDs = [];
     let categories: communitycategory;
     let n = 0;
@@ -23,32 +22,34 @@ const createCommunity = async (req: Request, res: Response) => {
         n++;
       }
     }
-    if (Community.name == data.name) {
-      res.status(400).send({
-        ok: true,
+    const community = await Community.findOne({ name: data.name });
+
+    if (community) {
+      return res.status(400).send({
+        ok: false,
         mensaje: "Nombre para comunidad no disponible",
         message: "Community name not available",
       });
-    } else {
-      const img = await perfiles(req);
-      const { imgUrl } = img;
-      const { bannerUrl } = img;
-
-      const create: community = await new Community({
-        ...data,
-        communityCategory_id: IDs,
-        img: imgUrl ? imgUrl : null,
-        banner: bannerUrl ? bannerUrl : null,
-      });
-      await create.save();
-
-      res.status(201).send({
-        ok: true,
-        community: create,
-        mensaje: "Comunidad creada con éxito",
-        message: "Community created successfully",
-      });
     }
+
+    const img = await perfiles(req);
+    const { imgUrl } = img;
+    const { bannerUrl } = img;
+
+    const create: community = await new Community({
+      ...data,
+      communityCategory_id: IDs,
+      img: imgUrl ? imgUrl : null,
+      banner: bannerUrl ? bannerUrl : null,
+    });
+    await create.save();
+
+    res.status(201).send({
+      ok: true,
+      data: create.toJSON(),
+      mensaje: "Comunidad creada con éxito",
+      message: "Community created successfully",
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -82,25 +83,29 @@ const getCommunities = async (req: Request, res: Response) => {
   }
 };
 
-const getCommunity = async (req, res) => {
+const getCommunity = async (req: Request, res: Response) => {
   try {
-    const { _id } = req.params;
+    const { _id, user_id } = req.params;
     const { ...data } = req.body;
 
-    // Obtener todas las comunidades activas para sus hotScores
     const communities = await Community.find({ isActive: true });
 
-    // Crear un array con los hotScores de todas las comunidades
     const hotScoresArray = communities.map((community) => community.hotScore);
-
-    // Ordenar el array de hotScores en orden descendente
     hotScoresArray.sort((a, b) => b - a);
 
-    // Obtener la comunidad específica
-    const community = await Community.findById(_id)
-      .populate("members_id")
-      .populate("owner_id")
-      .populate("admins_id");
+    let communityQuery = Community.findById(_id)
+      .populate("owner_id");
+
+    // Verificar si hay members_id y admins_id antes de hacer populate
+    const communityCheck = await Community.findById(_id).lean();
+    if (communityCheck.members_id && communityCheck.members_id.length > 0) {
+      communityQuery = communityQuery.populate("members_id");
+    }
+    if (communityCheck.admins_id && communityCheck.admins_id.length > 0) {
+      communityQuery = communityQuery.populate("admins_id");
+    }
+
+    const community = await communityQuery.exec();
 
     if (!community) {
       return res.status(404).send({
@@ -110,23 +115,21 @@ const getCommunity = async (req, res) => {
       });
     }
 
-    if (data.user_id) {
-      const user = await User.findOne({ _id: data?.user_id });
+    if (user_id) {
+      const user = await User.findOne({ _id: user_id });
 
       if (community.bannedUsers_id.includes(user._id)) {
-        return res.status(418).send({
+        return res.status(200).send({
           ok: false,
           data: community,
+          banned: true,
           mensaje: "Usuario baneado",
           message: "User banned",
         });
       }
     }
 
-    // Obtener el hotScore de la comunidad específica
     const specificCommunityHotScore = community.hotScore;
-
-    // Encontrar la posición del hotScore de la comunidad específica en el array
     const rango = hotScoresArray.indexOf(specificCommunityHotScore) + 1;
 
     res.status(200).send({
@@ -145,6 +148,7 @@ const getCommunity = async (req, res) => {
     });
   }
 };
+
 
 const updateCommunity = async (req: Request, res: Response) => {
   try {
@@ -496,17 +500,19 @@ const getCommunityChats = async (req: Request, res: Response) => {
 
     if (communities.length > 0) {
       // Obtener IDs de las comunidades
-      const communityIds = communities.map(community => community._id);
+      const communityIds = communities.map((community) => community._id);
 
       // Buscar chats en esas comunidades
-      const chats = await CommunityChats.find({ community_id: { $in: communityIds } });
+      const chats = await CommunityChats.find({
+        community_id: { $in: communityIds },
+      });
 
       // Verificar si el usuario es miembro del chat
-      const chatsWithMembership = chats.map(chat => {
+      const chatsWithMembership = chats.map((chat) => {
         const isMember = chat.members_id.includes(user._id);
         return {
           ...chat.toObject(),
-          miembro: isMember ? true : false
+          miembro: isMember ? true : false,
         };
       });
 
@@ -532,7 +538,6 @@ const getCommunityChats = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 const createChatCommunity = async (req: Request, res: Response) => {
   try {
@@ -776,7 +781,7 @@ const hotCommunity = async (req, res) => {
 const createCategory = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
-    const create: communitycategory = await new CommunityCategory({...data,});
+    const create: communitycategory = await new CommunityCategory({ ...data });
     await create.save();
 
     res.status(201).send({

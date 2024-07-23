@@ -41,7 +41,11 @@ const createPost = async (req: Request, res: Response) => {
 const getAllPostByCommunity = async (req: Request, res: Response) => {
   try {
     const { community } = req.params;
-    const posts = await Post.find({ community, isActive: true, isDeleted: false })
+    const posts = await Post.find({
+      community,
+      isActive: true,
+      isDeleted: false,
+    })
       .populate("community")
       .populate("user")
       .sort({ postDate: -1 });
@@ -164,50 +168,71 @@ const deletePost = async (req: Request, res: Response) => {
   }
 };
 
-
 const timeLine = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const user = await User.findById(_id);
     const userCommunities = await Community.find({ members_id: user._id });
-    const userCommunityIds = userCommunities.map(community => community._id.toString());
+    const userCommunityIds = userCommunities.map((community) =>
+      community._id.toString()
+    );
 
     const friendsPosts = await Promise.all(
-      user.followers.map(IDfriend => 
+      user.followers.map((IDfriend) =>
         Post.find({ user: IDfriend, isActive: true })
-          .populate('community')
-          .populate('user')
+          .populate("community")
+          .populate("user")
       )
     );
 
     const communityPosts = await Promise.all(
-      userCommunityIds.map(communityID => 
-        Post.find({ community: communityID, isActive: true, user: { $nin: user.followers } })
-          .populate('community')
-          .populate('user')
+      userCommunityIds.map((communityID) =>
+        Post.find({
+          community: communityID,
+          isActive: true,
+          user: { $nin: user.followers },
+        })
+          .populate("community")
+          .populate("user")
       )
     );
 
     const nonUserCommunityPosts = await Post.find({
       community: { $nin: userCommunityIds },
       isActive: true,
-      user: { $nin: user.followers }
+      user: { $nin: user.followers },
     })
-    .populate('community')
-    .populate('user');
+      .populate("community")
+      .populate("user");
 
     // Comentarios
-    const friendscomments = await Comments.find({ post_id: { $in: friendsPosts.flat().map(post => post._id) } });
-    const noCommunitycomments = await Comments.find({ post_id: { $in: nonUserCommunityPosts.map(post => post._id) } });
-    const communitycomments = await Comments.find({ post_id: { $in: communityPosts.flat().map(post => post._id) } });
+    const friendscomments = await Comments.find({
+      post_id: { $in: friendsPosts.flat().map((post) => post._id) },
+    });
+    const noCommunitycomments = await Comments.find({
+      post_id: { $in: nonUserCommunityPosts.map((post) => post._id) },
+    });
+    const communitycomments = await Comments.find({
+      post_id: { $in: communityPosts.flat().map((post) => post._id) },
+    });
 
     // Subcomentarios
-    const subfriendscomments = await SubComments.find({ comment_id: { $in: friendscomments.map(comment => comment._id) } });
-    const subnoCommunitycomments = await SubComments.find({ comment_id: { $in: noCommunitycomments.map(comment => comment._id) } });
-    const subcommunitycomments = await SubComments.find({ comment_id: { $in: communitycomments.map(comment => comment._id) } });
+    const subfriendscomments = await SubComments.find({
+      comment_id: { $in: friendscomments.map((comment) => comment._id) },
+    });
+    const subnoCommunitycomments = await SubComments.find({
+      comment_id: { $in: noCommunitycomments.map((comment) => comment._id) },
+    });
+    const subcommunitycomments = await SubComments.find({
+      comment_id: { $in: communitycomments.map((comment) => comment._id) },
+    });
 
     // Agrupar subcomentarios por comment_id usando strings como claves
-    const subcommentsGroupedByComment = [...subfriendscomments, ...subnoCommunitycomments, ...subcommunitycomments].reduce((acc, subcomment) => {
+    const subcommentsGroupedByComment = [
+      ...subfriendscomments,
+      ...subnoCommunitycomments,
+      ...subcommunitycomments,
+    ].reduce((acc, subcomment) => {
       const commentIdStr = subcomment.comment_id.toString(); // Convertir ObjectId a string
       if (!acc[commentIdStr]) {
         acc[commentIdStr] = [];
@@ -217,13 +242,16 @@ const timeLine = async (req: Request, res: Response) => {
     }, {} as { [key: string]: typeof subfriendscomments });
 
     // Agrupar comentarios por post_id e incluir subcomentarios en cada comentario
-    const postsWithCommentsAndSubcomments = (posts, comments, subcomments) => 
-      posts.map(post => ({
+    const postsWithCommentsAndSubcomments = (posts, comments, subcomments) =>
+      posts.map((post) => ({
         ...post.toObject(),
-        comments: comments.filter(comment => comment.post_id.equals(post._id)).map(comment => ({
-          ...comment.toObject(),
-          subcomments: subcommentsGroupedByComment[comment._id.toString()] || [],
-        })),
+        comments: comments
+          .filter((comment) => comment.post_id.equals(post._id))
+          .map((comment) => ({
+            ...comment.toObject(),
+            subcomments:
+              subcommentsGroupedByComment[comment._id.toString()] || [],
+          })),
       }));
 
     const allPosts = [
@@ -250,19 +278,29 @@ const timeLine = async (req: Request, res: Response) => {
     allPosts.sort((a, b) => b.hotScore - a.hotScore);
 
     // Separar publicaciones
-    const userCommunityPosts = postsWithCommentsAndSubcomments(allPosts.filter(post =>
-      userCommunityIds.includes(String(post.community._id)),
-    ), communitycomments, subcommunitycomments);
+    const userCommunityPosts = postsWithCommentsAndSubcomments(
+      allPosts.filter((post) =>
+        userCommunityIds.includes(String(post.community._id))
+      ),
+      communitycomments,
+      subcommunitycomments
+    );
 
-    const friendsPostsOnly = postsWithCommentsAndSubcomments(allPosts.filter(post =>
-      user.followers.includes(String(post.user._id))
-    ), friendscomments, subfriendscomments);
+    const friendsPostsOnly = postsWithCommentsAndSubcomments(
+      allPosts.filter((post) => user.followers.includes(String(post.user._id))),
+      friendscomments,
+      subfriendscomments
+    );
 
-    const otherCommunityPosts = postsWithCommentsAndSubcomments(allPosts.filter(
-      post =>
-        !userCommunityIds.includes(String(post.community._id)) &&
-        !user.followers.includes(String(post.user._id))
-    ), noCommunitycomments, subnoCommunitycomments);
+    const otherCommunityPosts = postsWithCommentsAndSubcomments(
+      allPosts.filter(
+        (post) =>
+          !userCommunityIds.includes(String(post.community._id)) &&
+          !user.followers.includes(String(post.user._id))
+      ),
+      noCommunitycomments,
+      subnoCommunitycomments
+    );
 
     // Crear el feed combinado
     const combinedFeed = [];
@@ -310,13 +348,10 @@ const timeLine = async (req: Request, res: Response) => {
 
     res.status(200).json({
       ok: true,
-      data: {
-        combinedFeed,
-      },
+      data: [...combinedFeed],
       mensaje: "Publicaciones de amigos y comunidades",
       message: "Posts of friends and communities",
     });
-
   } catch (error) {
     console.error(error); // Log the detailed error
     res.status(500).json({
@@ -327,9 +362,6 @@ const timeLine = async (req: Request, res: Response) => {
     });
   }
 };
-
-
-
 
 const userProfile = async (req: Request, res: Response) => {
   try {
@@ -345,39 +377,48 @@ const userProfile = async (req: Request, res: Response) => {
     }
 
     // Obtén los posts del usuario
-    const postUsuario = await Post.find({ user: user._id }).populate("user")
-    .populate("community")
-    ;
-
+    const postUsuario = await Post.find({ user: user._id })
+      .populate("user")
+      .populate("community");
     // Obtén los comentarios para los posts del usuario
-    const comments = await Comments.find({ post_id: { $in: postUsuario.map(post => post._id) } });
+    const comments = await Comments.find({
+      post_id: { $in: postUsuario.map((post) => post._id) },
+    });
 
     // Obtén los subcomentarios para los comentarios
-    const commentIds = comments.map(comment => comment._id);
-    const subcomments = await SubComments.find({ comment_id: { $in: commentIds } });
+    const commentIds = comments.map((comment) => comment._id);
+    const subcomments = await SubComments.find({
+      comment_id: { $in: commentIds },
+    });
 
     // Agrupa los subcomentarios por comment_id usando strings como claves
-    const subcommentsGroupedByComment = subcomments.reduce((acc, subcomment) => {
-      const commentIdStr = subcomment.comment_id.toString(); // Convertir ObjectId a string
-      if (!acc[commentIdStr]) {
-        acc[commentIdStr] = [];
-      }
-      acc[commentIdStr].push(subcomment);
-      return acc;
-    }, {} as { [key: string]: subcomments[] });
+    const subcommentsGroupedByComment = subcomments.reduce(
+      (acc, subcomment) => {
+        const commentIdStr = subcomment.comment_id.toString(); // Convertir ObjectId a string
+        if (!acc[commentIdStr]) {
+          acc[commentIdStr] = [];
+        }
+        acc[commentIdStr].push(subcomment);
+        return acc;
+      },
+      {} as { [key: string]: subcomments[] }
+    );
 
     // Agrupa los comentarios por post_id e incluye los subcomentarios en cada comentario
-    const postsWithCommentsAndSubcomments = postUsuario.map(post => ({
+    const postsWithCommentsAndSubcomments = postUsuario.map((post) => ({
       ...post.toObject(),
-      comments: comments.filter(comment => comment.post_id.equals(post._id)).map(comment => ({
-        ...comment.toObject(),
-        subcomments: subcommentsGroupedByComment[comment._id.toString()] || [],
-      })),
+      comments: comments
+        .filter((comment) => comment.post_id.equals(post._id))
+        .map((comment) => ({
+          ...comment.toObject(),
+          subcomments:
+            subcommentsGroupedByComment[comment._id.toString()] || [],
+        })),
     }));
 
     res.status(200).send({
       ok: true,
-      user:user,
+      user: user,
       posts: postsWithCommentsAndSubcomments,
       mensaje: "Post del usuario",
       message: "Post of the user",
@@ -392,11 +433,6 @@ const userProfile = async (req: Request, res: Response) => {
   }
 };
 
-
-
-
-
-
 const comment = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
@@ -409,10 +445,9 @@ const comment = async (req: Request, res: Response) => {
     await newComment.populate("user_id");
 
     const comment = {
-      ...newComment.toObject(), 
+      ...newComment.toObject(),
       commentDate: calculateElapsedTime(newComment.commentDate),
     };
-
 
     res.status(200).send({
       ok: true,
@@ -548,8 +583,8 @@ const responseComment = async (req: Request, res: Response) => {
     await newComment.save();
 
     const comment = {
-        ...newComment.toObject(),
-        commentDate: calculateElapsedTime(newComment.commentDate),
+      ...newComment.toObject(),
+      commentDate: calculateElapsedTime(newComment.commentDate),
     };
     res.status(200).send({
       ok: true,
@@ -583,7 +618,8 @@ const getSubCommentsByComment = async (req: Request, res: Response) => {
       ok: true,
       data: mappedComments,
       mensaje: "Comentarios encontrados correctamente",
-      message: "Comments found successfully", });
+      message: "Comments found successfully",
+    });
   } catch (error) {
     res.status(500).json({
       ok: false,
@@ -635,7 +671,8 @@ const updateResponseComment = async (req: Request, res: Response) => {
     if (minutesDiff > 25) {
       return res.status(403).json({
         ok: false,
-        mensaje: "La respuesta de comentario no se puede actualizar después de 25 minutos",
+        mensaje:
+          "La respuesta de comentario no se puede actualizar después de 25 minutos",
         message: "The response comment cannot be updated after 25 minutes",
       });
     }
