@@ -188,8 +188,7 @@ const updateMessage = async (req: Request, res: Response) => {
   
   const findChat = async (req: Request, res: Response) => {
     try {
-      const { ID } = req.params;
-      const { name } = req.body;  // Nombre parcial pasado por el cuerpo de la solicitud
+      const { ID,name } = req.params;
   
       // Buscar comunidades a las que el usuario es miembro
       const user = await User.findById({_id: ID })
