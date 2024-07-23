@@ -193,7 +193,6 @@ const updateMessage = async (req: Request, res: Response) => {
   
       // Buscar comunidades a las que el usuario es miembro
       const user = await User.findById({_id: ID })
-      const filtro= name.toString();
   
       if (!user) {
         return res.status(404).send({
@@ -212,7 +211,7 @@ const updateMessage = async (req: Request, res: Response) => {
         // Buscar chats en esas comunidades que contengan el nombre parcial
         const chats = await CommunityChats.find({ 
           community_id: { $in: communityIds },
-          name: { $regex: filtro, $options: 'i' }  // Buscar chats que contengan el nombre parcial (insensible a mayúsculas)
+          name: { $regex: name, $options: 'i' }  // Buscar chats que contengan el nombre parcial (insensible a mayúsculas)
         });
   
         // Verificar si el usuario es miembro del chat
