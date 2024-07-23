@@ -3,6 +3,9 @@ import { Request, Response } from "express";
 import User, { user } from "../model/user";
 import moment from "moment";
 import { calculateElapsedTime } from "../helper/date";
+import Community, { community } from "../model/community";
+import CommunityChats, { communitychats } from "../model/communityChats";
+
 
 const sendMessage = async (req: Request, res: Response) => {
   try {
@@ -108,8 +111,6 @@ const updateMessage = async (req: Request, res: Response) => {
     }
   };
   
-
-
   const getMessages = async (req: Request, res: Response) => {
     try {
       const { communityID, chatID } = req.params;
@@ -185,9 +186,69 @@ const updateMessage = async (req: Request, res: Response) => {
     }
   };
   
+  const findChat = async (req: Request, res: Response) => {
+    try {
+      const { ID } = req.params;
+      const { name } = req.body;  // Nombre parcial pasado por el cuerpo de la solicitud
+  
+      // Buscar comunidades a las que el usuario es miembro
+      const user = await User.findById({_id: ID })
+  
+      if (!user) {
+        return res.status(404).send({
+          ok: false,
+          mensaje: "Usuario no encontrado",
+          message: "User not found",
+        });
+      }
+  
+      const communities = await Community.find({ members_id: user._id });
+  
+      if (communities.length > 0) {
+        // Obtener IDs de las comunidades
+        const communityIds = communities.map(community => community._id);
+  
+        // Buscar chats en esas comunidades que contengan el nombre parcial
+        const chats = await CommunityChats.find({ 
+          community_id: { $in: communityIds },
+          name: { $regex: name, $options: 'i' }  // Buscar chats que contengan el nombre parcial (insensible a mayúsculas)
+        });
+  
+        // Verificar si el usuario es miembro del chat
+        const chatsWithMembership = chats.map(chat => {
+          const isMember = chat.members_id.includes(user._id);
+          return {
+            ...chat.toObject(),
+            miembro: isMember ? true : false
+          };
+        });
+  
+        res.status(200).send({
+          ok: true,
+          data: chatsWithMembership,
+          mensaje: "todos los chats de las comunidades a las que eres miembro",
+          message: "all community chats you are a member of",
+        });
+      } else {
+        res.status(404).send({
+          ok: false,
+          mensaje: "No se encontraron comunidades para el usuario",
+          message: "No communities found for the user",
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      res.status(500).send({
+        mensaje: "¡Ups! Algo salió mal",
+        message: "Ups! Something went wrong",
+        error,
+      });
+    }
+  };
+  
   
  
   
-export { sendMessage, updateMessage, deleteMessage,getMessages};
+export { sendMessage, updateMessage, deleteMessage,getMessages, findChat};
 
 

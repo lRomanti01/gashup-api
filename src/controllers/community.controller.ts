@@ -506,7 +506,7 @@ const getCommunityChats = async (req: Request, res: Response) => {
         const isMember = chat.members_id.includes(user._id);
         return {
           ...chat.toObject(),
-          miembro: isMember ? true : false
+          isMember: isMember ? true : false
         };
       });
 
@@ -532,7 +532,6 @@ const getCommunityChats = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 const createChatCommunity = async (req: Request, res: Response) => {
   try {
@@ -771,6 +770,51 @@ const hotCommunity = async (req, res) => {
   }
 };
 
+const findCommunity = async (req: Request, res: Response) => {
+  try {
+    const { ID } = req.params;
+
+    // Buscar usuario por ID
+    const user = await User.findById({ _id:ID });
+
+    if (!user) {
+      return res.status(404).send({
+        ok: false,
+        mensaje: "Usuario no encontrado",
+        message: "User not found",
+      });
+    }
+
+    // Buscar comunidades en las que el usuario es miembro
+    const communities = await Community.find({ members_id: user._id });
+
+    if (communities.length > 0) {
+      res.status(200).send({
+        ok: true,
+        data: communities,
+        mensaje: "Comunidades a las que eres miembro",
+        message: "Communities you are a member of",
+      });
+    } else {
+      res.status(404).send({
+        ok: false,
+        mensaje: "No se encontraron comunidades para el usuario",
+        message: "No communities found for the user",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+      error,
+    });
+  }
+};
+
+
+
+
 // Categories
 
 const createCategory = async (req: Request, res: Response) => {
@@ -836,4 +880,5 @@ export {
   hotCommunity,
   createCategory,
   getCategories,
+  findCommunity
 };
