@@ -804,7 +804,7 @@ const findCommunity = async (req: Request, res: Response) => {
     const { ID } = req.params;
 
     // Buscar usuario por ID
-    const user = await User.findById({ _id:ID });
+    const user = await User.findById(ID);
 
     if (!user) {
       return res.status(404).send({
@@ -815,14 +815,21 @@ const findCommunity = async (req: Request, res: Response) => {
     }
 
     // Buscar comunidades en las que el usuario es miembro
-    const communities = await Community.find({ members_id: user._id });
+    const memberCommunities = await Community.find({ members_id: user._id });
 
-    if (communities.length > 0) {
+    // Buscar comunidades que el usuario posee (suponiendo que tienes un campo 'owner_id' en el esquema de la comunidad)
+    const ownedCommunities = await Community.find({ owner_id: user._id });
+
+    // Unir las comunidades en una sola lista y eliminar duplicados
+    const allCommunities = [...memberCommunities, ...ownedCommunities];
+    const uniqueCommunities = [...new Set(allCommunities.map(community => community._id))];
+
+    if (uniqueCommunities.length > 0) {
       res.status(200).send({
         ok: true,
-        data: communities,
-        mensaje: "Comunidades a las que eres miembro",
-        message: "Communities you are a member of",
+        data: uniqueCommunities,
+        mensaje: "Comunidades a las que eres miembro o dueño",
+        message: "Communities you are a member of or owner",
       });
     } else {
       res.status(404).send({
@@ -840,6 +847,7 @@ const findCommunity = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 
 
