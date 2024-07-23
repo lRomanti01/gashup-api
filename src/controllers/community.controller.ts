@@ -398,34 +398,56 @@ const banFromCommunity = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
     const { _id } = req.params;
-    const community: community | null = await Community.findById({ _id });
+    
+    // Buscar la comunidad por ID
+    const community = await Community.findById(_id);
+    if (!community) {
+      return res.status(404).send({
+        ok: false,
+        mensaje: "Comunidad no encontrada",
+        message: "Community not found",
+      });
+    }
+
+    // Buscar el usuario que realiza la acción y el usuario a ser baneado
     const user = await User.findOne({ _id: data.userID });
     const banned = await User.findOne({ _id: data.bannedID });
 
-    console.log(user?._id);
-    console.log(banned._id);
-    console.log(community?.owner_id);
+    if (!user || !banned) {
+      return res.status(404).send({
+        ok: false,
+        mensaje: "Usuario no encontrado",
+        message: "User not found",
+      });
+    }
 
     if (
-      community?.owner_id.equals(user?._id) ||
-      community?.admins_id.includes(user?._id)
+      community.owner_id.equals(user._id) ||
+      community.admins_id.includes(user._id)
     ) {
-      const ban = await community?.updateOne({
-        $push: { bannedUsers_id: banned?._id },
-        $pull: { members_id: banned?._id },
+      // Banear al usuario de la comunidad
+      const ban = await community.updateOne({
+        $push: { bannedUsers_id: banned._id },
+        $pull: { members_id: banned._id },
       });
+
+      // Sacar al usuario de todos los chats de esa comunidad
+      await CommunityChats.updateMany(
+        { community_id: community._id },
+        { $pull: { members_id: banned._id } }
+      );
 
       res.status(200).send({
         ok: true,
         ban,
-        mensaje: "Usuario baneado de la comunidad con exito",
-        message: "User Banned from the community successfully",
+        mensaje: "Usuario baneado de la comunidad y chats con éxito",
+        message: "User banned from the community and chats successfully",
       });
     } else {
       res.status(400).send({
         ok: false,
         mensaje:
-          "Solamante el dueño y los administradores de la comunidad pueden banear usuarios",
+          "Solamente el dueño y los administradores de la comunidad pueden banear usuarios",
         message: "Only the owner and community admins can ban users",
       });
     }
@@ -439,6 +461,7 @@ const banFromCommunity = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 const assignAdmins = async (req: Request, res: Response) => {
   try {
@@ -485,7 +508,7 @@ const getCommunityChats = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
 
-    // Buscar comunidades a las que el usuario es miembro
+    // Buscar el usuario
     const user: user = await User.findOne({ _id });
 
     if (!user) {
@@ -496,31 +519,34 @@ const getCommunityChats = async (req: Request, res: Response) => {
       });
     }
 
-    const communities = await Community.find({ members_id: user._id });
+    // Buscar comunidades a las que el usuario es miembro
+    const memberCommunities = await Community.find({ members_id: user._id });
 
-    if (communities.length > 0) {
-      // Obtener IDs de las comunidades
-      const communityIds = communities.map((community) => community._id);
+    // Buscar comunidades que el usuario posee (suponiendo que tienes un campo 'owner_id' en el esquema de la comunidad)
+    const ownedCommunities = await Community.find({ owner_id: user._id });
 
+    // Unir las comunidades en una sola lista y eliminar duplicados
+    const allCommunities = [...memberCommunities, ...ownedCommunities];
+    const uniqueCommunityIds = [...new Set(allCommunities.map(community => community._id))];
+
+    if (uniqueCommunityIds.length > 0) {
       // Buscar chats en esas comunidades
-      const chats = await CommunityChats.find({
-        community_id: { $in: communityIds },
-      });
+      const chats = await CommunityChats.find({ community_id: { $in: uniqueCommunityIds } });
 
       // Verificar si el usuario es miembro del chat
       const chatsWithMembership = chats.map((chat) => {
         const isMember = chat.members_id.includes(user._id);
         return {
           ...chat.toObject(),
-          miembro: isMember ? true : false,
+          isMember: isMember ? true : false
         };
       });
 
       res.status(200).send({
         ok: true,
         data: chatsWithMembership,
-        mensaje: "todos los chats de las comunidades a las que eres miembro",
-        message: "all community chats you are a member of",
+        mensaje: "Todos los chats de las comunidades a las que eres miembro o dueño",
+        message: "All community chats you are a member of or owner",
       });
     } else {
       res.status(404).send({
@@ -776,6 +802,59 @@ const hotCommunity = async (req, res) => {
   }
 };
 
+const findCommunity = async (req: Request, res: Response) => {
+  try {
+    const { ID } = req.params;
+
+    // Buscar usuario por ID
+    const user = await User.findById(ID);
+
+    if (!user) {
+      return res.status(404).send({
+        ok: false,
+        mensaje: "Usuario no encontrado",
+        message: "User not found",
+      });
+    }
+
+    // Buscar comunidades en las que el usuario es miembro
+    const memberCommunities = await Community.find({ members_id: user._id });
+
+    // Buscar comunidades que el usuario posee (suponiendo que tienes un campo 'owner_id' en el esquema de la comunidad)
+    const ownedCommunities = await Community.find({ owner_id: user._id });
+
+    // Unir las comunidades en una sola lista y eliminar duplicados
+    const allCommunities = [...memberCommunities, ...ownedCommunities];
+    const uniqueCommunities = [...new Set(allCommunities.map(community => community._id))];
+
+    if (uniqueCommunities.length > 0) {
+      res.status(200).send({
+        ok: true,
+        data: uniqueCommunities,
+        mensaje: "Comunidades a las que eres miembro o dueño",
+        message: "Communities you are a member of or owner",
+      });
+    } else {
+      res.status(404).send({
+        ok: false,
+        mensaje: "No se encontraron comunidades para el usuario",
+        message: "No communities found for the user",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+      error,
+    });
+  }
+};
+
+
+
+
+
 // Categories
 
 const createCategory = async (req: Request, res: Response) => {
@@ -841,4 +920,5 @@ export {
   hotCommunity,
   createCategory,
   getCategories,
+  findCommunity
 };

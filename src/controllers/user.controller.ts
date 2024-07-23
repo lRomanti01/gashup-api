@@ -186,7 +186,7 @@ const follow= async (req, res)=>
             message: "Ups! Something went wrong",
           });
         }
-  
+   
   }
     
  const unfollow= async (req, res)=>
@@ -196,8 +196,8 @@ const follow= async (req, res)=>
            const {id}= req.params;
            const {...data}= req.body;
            const user= await User.findById(id);//usuario logeado
-           const userToFollow= await User.findById(data.userToFollow);//la persona que quiero dejar de seguir
-           if(!user.followed.includes(userToFollow._id))
+           const userToFollow= await User.findById(data.userToUnFollow);//la persona que quiero dejar de seguir
+           if(user.followed.includes(userToFollow._id))
               {
                  await user.updateOne({$pull:{followed:userToFollow._id}});
                  await userToFollow.updateOne({$pull:{followers:id}});

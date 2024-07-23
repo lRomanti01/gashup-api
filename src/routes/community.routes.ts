@@ -30,5 +30,7 @@ communityRouter.get("/getCommunitiesForCategories",community.getCommunitiesForCa
 communityRouter.get("/getCommunityChats/:_id", community.getCommunityChats);
 communityRouter.get("/hotCommunity", community.hotCommunity);// documentar
 communityRouter.get("/getCategories", community.getCategories);// documentar;
+communityRouter.get("/findCommunity/:ID", community.findCommunity);// documentar;
+
 
 export default communityRouter;

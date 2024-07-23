@@ -11,5 +11,7 @@ chatRouter.put("/updateMessage/:communityID/:chatID/:messageID",chat.updateMessa
 chatRouter.delete("/deleteMessage/:communityID/:chatID/:messageID",chat.deleteMessage);
 //get
 chatRouter.get("/getMessages/:communityID/:chatID",chat.getMessages);
+chatRouter.get("/findChat/:ID/:name",chat.findChat);
+
 
 export default chatRouter;
