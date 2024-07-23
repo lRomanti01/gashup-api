@@ -515,12 +515,10 @@ const getCommunityChats = async (req: Request, res: Response) => {
       });
     }
 
-    // Buscar comunidades en las que el usuario es miembro
-    const communities = await Community.find({ members_id: user._id });
     // Buscar comunidades a las que el usuario es miembro
     const memberCommunities = await Community.find({ members_id: user._id });
 
-    // Buscar comunidades que el usuario posee
+    // Buscar comunidades que el usuario posee (suponiendo que tienes un campo 'owner_id' en el esquema de la comunidad)
     const ownedCommunities = await Community.find({ owner_id: user._id });
 
     // Unir las comunidades en una sola lista y eliminar duplicados
@@ -530,17 +528,6 @@ const getCommunityChats = async (req: Request, res: Response) => {
     if (uniqueCommunityIds.length > 0) {
       // Buscar chats en esas comunidades
       const chats = await CommunityChats.find({ community_id: { $in: uniqueCommunityIds } });
-      const chats = await CommunityChats.find({ community_id: { $in: communityIds } });
-
-      // Buscar comunidades donde el usuario es dueño
-      const ownedCommunities = await Community.find({ owner_id: user._id });
-
-      // Obtener IDs de las comunidades que el usuario es dueño
-      const ownedCommunityIds = ownedCommunities.map(community => community._id);
-      console.log(ownedCommunityIds);
-
-      // Buscar chats en esas comunidades que el usuario es dueño
-      const ownerCommunityChats = await CommunityChats.find({ community_id: { $in: ownedCommunityIds } });
 
       // Verificar si el usuario es miembro del chat
       const chatsWithMembership = chats.map(chat => {
@@ -550,9 +537,6 @@ const getCommunityChats = async (req: Request, res: Response) => {
           isMember: isMember ? true : false
         };
       });
-
-      // Combinar los chats donde el usuario es miembro y los de las comunidades que es dueño
-      const allChats = [...chatsWithMembership, ...ownerCommunityChats.map(chat => chat.toObject())];
 
       res.status(200).send({
         ok: true,
@@ -576,6 +560,7 @@ const getCommunityChats = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 const createChatCommunity = async (req: Request, res: Response) => {
   try {
