@@ -504,8 +504,9 @@ const getCommunityChats = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
 
-    // Buscar usuario por ID
-    const user = await User.findOne({ _id });
+    // Buscar el usuario
+    const user: user = await User.findOne({ _id });
+
     if (!user) {
       return res.status(404).send({
         ok: false,
@@ -516,12 +517,19 @@ const getCommunityChats = async (req: Request, res: Response) => {
 
     // Buscar comunidades en las que el usuario es miembro
     const communities = await Community.find({ members_id: user._id });
+    // Buscar comunidades a las que el usuario es miembro
+    const memberCommunities = await Community.find({ members_id: user._id });
 
-    if (communities.length > 0) {
-      // Obtener IDs de las comunidades
-      const communityIds = communities.map(community => community._id);
+    // Buscar comunidades que el usuario posee
+    const ownedCommunities = await Community.find({ owner_id: user._id });
 
+    // Unir las comunidades en una sola lista y eliminar duplicados
+    const allCommunities = [...memberCommunities, ...ownedCommunities];
+    const uniqueCommunityIds = [...new Set(allCommunities.map(community => community._id))];
+
+    if (uniqueCommunityIds.length > 0) {
       // Buscar chats en esas comunidades
+      const chats = await CommunityChats.find({ community_id: { $in: uniqueCommunityIds } });
       const chats = await CommunityChats.find({ community_id: { $in: communityIds } });
 
       // Buscar comunidades donde el usuario es dueño
@@ -548,9 +556,9 @@ const getCommunityChats = async (req: Request, res: Response) => {
 
       res.status(200).send({
         ok: true,
-        data: allChats,
-        mensaje: "Todos los chats de las comunidades a las que eres miembro y de las comunidades que eres dueño",
-        message: "All community chats you are a member of and from communities you own",
+        data: chatsWithMembership,
+        mensaje: "Todos los chats de las comunidades a las que eres miembro o dueño",
+        message: "All community chats you are a member of or owner",
       });
     } else {
       res.status(404).send({
@@ -568,8 +576,6 @@ const getCommunityChats = async (req: Request, res: Response) => {
     });
   }
 };
-
-
 
 const createChatCommunity = async (req: Request, res: Response) => {
   try {
