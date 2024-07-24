@@ -226,33 +226,42 @@ const follow= async (req, res)=>
           }
     
   } 
-const getFollowersAndFollowed= async (req, res)=>
-  {
-    try
-            {
-              const {id}= req.params;
-              const user= await User.findById(id);//usuario logeado
-             const followers= user.followers
-             const followed= user.followed
-
-                    res.status(200).json(
-                    {
-                     ok: true,
-                     followers,followed,
-                     mensaje: "seguidores y seguidos",
-                     message: "followwers and followed",
-                    });
-            }catch (error) {
-              console.log(error);
-              res.status(500).json({
-                ok: false,
-                error,
-                mensaje: "¡Ups! Algo salió mal",
-                message: "Ups! Something went wrong",
-              });
-            }
-      
+  const getFollowersAndFollowed = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await User.findById(id); // Usuario logueado
+  
+      if (!user) {
+        return res.status(404).json({
+          ok: false,
+          mensaje: "Usuario no encontrado",
+          message: "User not found",
+        });
       }
+  
+      // Obtener los followers y followed usando sus IDs
+      const followers = await User.find({ _id: { $in: user.followers } });
+      const followed = await User.find({ _id: { $in: user.followed } });
+  
+      res.status(200).json({
+        ok: true,
+        followers,
+        followed,
+        mensaje: "Seguidores y seguidos",
+        message: "Followers and followed",
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        ok: false,
+        error,
+        mensaje: "¡Ups! Algo salió mal",
+        message: "Oops! Something went wrong",
+      });
+    }
+  };
+  
+  
 
 const getuser = async (req: Request, res: Response) => {
     try{
