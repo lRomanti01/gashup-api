@@ -230,8 +230,8 @@ const getFollowersAndFollowed= async (req, res)=>
   {
     try
             {
-             const {id}= req.body;
-             const user= await User.findById(id);
+              const {id}= req.params;
+              const user= await User.findById(id);//usuario logeado
              const followers= user.followers
              const followed= user.followed
 
