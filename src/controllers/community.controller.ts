@@ -10,7 +10,7 @@ import { guardarImagenes, deleteImage, perfiles } from "./uploadImage";
 const createCommunity = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
-    const array = data.communityCategory_id.split(",");
+    const array =JSON.parse( data.communityCategory_id);
     const IDs = [];
     let categories: communitycategory;
     let n = 0;
@@ -164,9 +164,11 @@ const updateCommunity = async (req: Request, res: Response) => {
       });
     }
 
+    const ban = JSON.parse(data.bannedUsers_id); 
+
     // Update banned users
-    if (data.bannedUsers_id && data.bannedUsers_id.length > 0) {
-      const bannedUsers = await User.find({ _id: { $in: data.bannedUsers_id } });
+    if (data.bannedUsers_id && ban.length > 0) {
+      const bannedUsers = await User.find({ _id: { $in: ban } });
       const bannedUserIds = bannedUsers.map(user => user._id);
       await community.updateOne({
         $set: { bannedUsers_id: bannedUserIds },
@@ -174,18 +176,20 @@ const updateCommunity = async (req: Request, res: Response) => {
       });
     }
 
+    const admin = JSON.parse(data.admins_id);
     // Update admin users
-    if (data.admins_id && data.admins_id.length > 0) {
-      const adminUsers = await User.find({ _id: { $in: data.admins_id } });
+    if (data.admins_id && admin.length > 0) {
+      const adminUsers = await User.find({ _id: { $in: admin } });
       const adminUserIds = adminUsers.map(user => user._id);
       await community.updateOne({
-        $set: { admins_id:  adminUserIds  },
+        $set: { admins_id: adminUserIds },
       });
     }
+    const CAT = JSON.parse(data.communityCategory_id); 
 
     // Update categories
-    if (data.communityCategory_id && data.communityCategory_id.length > 0) {
-      const categories = await CommunityCategory.find({ _id: { $in: data.communityCategory_id } });
+    if (data.communityCategory_id && CAT.length > 0) {
+      const categories = await CommunityCategory.find({ _id: { $in: CAT } });
       const categoryIds = categories.map(category => category._id);
       await community.updateOne({
         $set: { category_id: categoryIds },
@@ -193,7 +197,6 @@ const updateCommunity = async (req: Request, res: Response) => {
     }
 
     // Update images
-   
     const img = await perfiles(req);
     const { imgUrl, bannerUrl } = img;
 
@@ -208,7 +211,6 @@ const updateCommunity = async (req: Request, res: Response) => {
       if (community.img) deleteImage(community.img);
       profilePicture = imgUrl;
     }
-  
 
     // Update community details
     const updatedCommunity = await Community.findByIdAndUpdate(
@@ -216,8 +218,8 @@ const updateCommunity = async (req: Request, res: Response) => {
       {
         name: data.name,
         description: data.description,
-        img:profilePicture? profilePicture:null,
-        banner:banner? banner:null
+        img: profilePicture ? profilePicture : null,
+        banner: banner ? banner : null
       },
       { new: true }
     );
@@ -238,6 +240,7 @@ const updateCommunity = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 const deleteCommunity = async (req: Request, res: Response) => {
   try {
@@ -383,7 +386,6 @@ const joinCommunity = async (req: Request, res: Response) => {
     });
   }
 };
-//colocarle para que tambien lo saque de los chats
 const banFromCommunity = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
@@ -451,7 +453,6 @@ const banFromCommunity = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 const assignAdmins = async (req: Request, res: Response) => {
   try {
@@ -839,6 +840,42 @@ const findCommunity = async (req: Request, res: Response) => {
   }
 };
 
+//chat
+const findCommunityChats = async (req: Request, res: Response) => {
+  try {
+    const { communityId } = req.params;
+
+    // Buscar la comunidad por ID
+    const community = await Community.findById(communityId);
+
+    if (!community) {
+      return res.status(404).send({
+        ok: false,
+        mensaje: "Comunidad no encontrada",
+        message: "Community not found",
+      });
+    }
+
+    // Buscar chats en esa comunidad que contengan el nombre parcial
+    const chats = await CommunityChats.find({ 
+      community_id: community._id,
+    });
+
+    res.status(200).send({
+      ok: true,
+      data: chats,
+      mensaje: "Todos los chats de la comunidad",
+      message: "All chats of the community",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Oops! Something went wrong",
+      error,
+    });
+  }
+};
 
 
 
@@ -908,5 +945,6 @@ export {
   hotCommunity,
   createCategory,
   getCategories,
-  findCommunity
+  findCommunity,
+  findCommunityChats
 };

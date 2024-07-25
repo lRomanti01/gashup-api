@@ -172,11 +172,14 @@ const timeLine = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const user = await User.findById(_id);
+    
+    // Obtener comunidades del usuario y comunidades en las que está baneado
     const userCommunities = await Community.find({ members_id: user._id });
-    const userCommunityIds = userCommunities.map((community) =>
-      community._id.toString()
-    );
-
+    const bannedCommunities = await Community.find({ bannedUsers_id: user._id });
+    
+    const userCommunityIds = userCommunities.map((community) => community._id.toString());
+    const bannedCommunityIds = bannedCommunities.map((community) => community._id.toString());
+    
     const friendsPosts = await Promise.all(
       user.followers.map((IDfriend) =>
         Post.find({ user: IDfriend, isActive: true })
@@ -198,7 +201,7 @@ const timeLine = async (req: Request, res: Response) => {
     );
 
     const nonUserCommunityPosts = await Post.find({
-      community: { $nin: userCommunityIds },
+      community: { $nin: [...userCommunityIds, ...bannedCommunityIds] },
       isActive: true,
       user: { $nin: user.followers },
     })
@@ -296,6 +299,7 @@ const timeLine = async (req: Request, res: Response) => {
       allPosts.filter(
         (post) =>
           !userCommunityIds.includes(String(post.community._id)) &&
+          !bannedCommunityIds.includes(String(post.community._id)) &&
           !user.followers.includes(String(post.user._id))
       ),
       noCommunitycomments,
@@ -363,6 +367,8 @@ const timeLine = async (req: Request, res: Response) => {
   }
 };
 
+
+//arreglar fecha
 const userProfile = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
