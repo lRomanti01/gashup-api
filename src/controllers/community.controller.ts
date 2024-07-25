@@ -153,98 +153,88 @@ const getCommunity = async (req: Request, res: Response) => {
 const updateCommunity = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
-    const { ...data } = req.body;
-    const community: community | null = await Community.findById({ _id });
-    if (
-      //validacion de permisos para actualizar
-      community?.owner_id == data.userID ||
-      community?.admins_id == data.userID
-    ) {
-      if (!community || community.isActive == false) {
-        //validacion de existencia
-        return res.status(400).send({
-          ok: false,
-          mensaje: "Comunidad no encontrada",
-          message: "Community not found",
-        });
-      } else {
-        //si existe
-        const img = await perfiles(req);
-        const { imgUrl } = img;
-        const { bannerUrl } = img;
-        let banner;
-        let profilePictur;
+    const { bannedIDs, adminIDs, categoryIDs, ...data } = req.body;
 
-        if (community.banner == null) {
-          banner = bannerUrl;
-        } //si no hay banner en firebase
-        else if (data.banner != community.banner) {
-          deleteImage(community.banner);
-          banner = bannerUrl;
-        } //si hay banner en firebase
-        else if (
-          !data.banner &&
-          req.files["banner"] == null &&
-          community.banner != null
-        ) {
-          deleteImage(community.banner);
-          banner = null;
-        } //si se queda sin banner
-        else if (data.banner) {
-          banner = data.banner;
-        } //dejar banner
-
-        if (community.img == null) {
-          profilePictur = imgUrl;
-        } //si no hay img en firebase
-        else if (data.banner != community.img) {
-          deleteImage(community.img);
-          profilePictur = imgUrl;
-        } //si hay img en firebase
-        else if (
-          !data.img &&
-          req.files["img"] == null &&
-          community.img != null
-        ) {
-          deleteImage(community.img);
-          profilePictur = null;
-        } //si se queda sin img
-        else if (data.img) {
-          profilePictur = data.img;
-        } //dejar img
-
-        const communityUpdate: community | null =
-          await Community.findByIdAndUpdate(
-            _id,
-            {
-              ...data,
-              img: profilePictur ? profilePictur : null,
-              banner: banner ? banner : null,
-            },
-            { new: true }
-          );
-        res.status(200).send({
-          ok: true,
-          communityUpdate,
-          mensaje: "Communidad actualizada con exito",
-          message: "Community updated successfully",
-        });
-      }
-    } else {
-      //sin permisos
-      res.status(400).send({
-        ok: true,
-        mensaje: "Solo el dueño y los admins pueden actualizar la comunidad",
-        message: "Only the owner and admins can update the comunity",
+    const community = await Community.findById(_id);
+    if (!community || !community.isActive) {
+      return res.status(400).send({
+        ok: false,
+        mensaje: "Comunidad no encontrada",
+        message: "Community not found",
       });
     }
+
+    // Update banned users
+    if (bannedIDs && bannedIDs.length > 0) {
+      const bannedUsers = await User.find({ _id: { $in: bannedIDs } });
+      const bannedUserIds = bannedUsers.map(user => user._id);
+      await community.updateOne({
+        $set: { bannedUsers_id: bannedUserIds },
+        $pull: { members_id: { $in: bannedUserIds } },
+      });
+    }
+
+    // Update admin users
+    if (adminIDs && adminIDs.length > 0) {
+      const adminUsers = await User.find({ _id: { $in: adminIDs } });
+      const adminUserIds = adminUsers.map(user => user._id);
+      await community.updateOne({
+        $set: { admins_id:  adminUserIds  },
+      });
+    }
+
+    // Update categories
+    if (categoryIDs && categoryIDs.length > 0) {
+      const categories = await CommunityCategory.find({ _id: { $in: categoryIDs } });
+      const categoryIds = categories.map(category => category._id);
+      await community.updateOne({
+        $set: { category_id: categoryIds },
+      });
+    }
+
+    // Update images
+   
+    const img = await perfiles(req);
+    const { imgUrl, bannerUrl } = img;
+
+    let banner = community.banner;
+    if (bannerUrl && data.banner !== community.banner) {
+      if (community.banner) deleteImage(community.banner);
+      banner = bannerUrl;
+    }
+
+    let profilePicture = community.img;
+    if (imgUrl && data.img !== community.img) {
+      if (community.img) deleteImage(community.img);
+      profilePicture = imgUrl;
+    }
+  
+
+    // Update community details
+    const updatedCommunity = await Community.findByIdAndUpdate(
+      _id,
+      {
+        name: data.name,
+        description: data.description,
+        img:profilePicture? profilePicture:null,
+        banner:banner? banner:null
+      },
+      { new: true }
+    );
+
+    res.status(200).send({
+      ok: true,
+      community: updatedCommunity,
+      mensaje: "Comunidad actualizada con éxito",
+      message: "Community updated successfully",
+    });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({
       ok: false,
       error,
       mensaje: "¡Ups! Algo salió mal",
-      message: "Ups! Something went wrong",
+      message: "Oops! Something went wrong",
     });
   }
 };
@@ -472,9 +462,6 @@ const assignAdmins = async (req: Request, res: Response) => {
 
     const ownerID: user = await User.findOne({ _id: data.ownerID });
     const adminID: user = await User.findOne({ _id: data.adminID });
-    console.log(ownerID._id.toString());
-    console.log(adminID._id);
-    console.log(community.owner_id.toString());
 
     if (community.owner_id.toString() == ownerID._id.toString()) {
       const admin = await community?.update({
