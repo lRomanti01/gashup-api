@@ -153,7 +153,7 @@ const getCommunity = async (req: Request, res: Response) => {
 const updateCommunity = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
-    const { bannedUsers_id, admins_id, communityCategory_id, ...data } = req.body;
+    const { ...data } = req.body;
 
     const community = await Community.findById(_id);
     if (!community || !community.isActive) {
@@ -165,8 +165,8 @@ const updateCommunity = async (req: Request, res: Response) => {
     }
 
     // Update banned users
-    if (bannedUsers_id && bannedUsers_id.length > 0) {
-      const bannedUsers = await User.find({ _id: { $in: bannedUsers_id } });
+    if (data.bannedUsers_id && data.bannedUsers_id.length > 0) {
+      const bannedUsers = await User.find({ _id: { $in: data.bannedUsers_id } });
       const bannedUserIds = bannedUsers.map(user => user._id);
       await community.updateOne({
         $set: { bannedUsers_id: bannedUserIds },
@@ -175,8 +175,8 @@ const updateCommunity = async (req: Request, res: Response) => {
     }
 
     // Update admin users
-    if (admins_id && admins_id.length > 0) {
-      const adminUsers = await User.find({ _id: { $in: admins_id } });
+    if (data.admins_id && data.admins_id.length > 0) {
+      const adminUsers = await User.find({ _id: { $in: data.admins_id } });
       const adminUserIds = adminUsers.map(user => user._id);
       await community.updateOne({
         $set: { admins_id:  adminUserIds  },
@@ -184,8 +184,8 @@ const updateCommunity = async (req: Request, res: Response) => {
     }
 
     // Update categories
-    if (communityCategory_id && communityCategory_id.length > 0) {
-      const categories = await CommunityCategory.find({ _id: { $in: communityCategory_id } });
+    if (data.communityCategory_id && data.communityCategory_id.length > 0) {
+      const categories = await CommunityCategory.find({ _id: { $in: data.communityCategory_id } });
       const categoryIds = categories.map(category => category._id);
       await community.updateOne({
         $set: { category_id: categoryIds },
@@ -224,7 +224,7 @@ const updateCommunity = async (req: Request, res: Response) => {
 
     res.status(200).send({
       ok: true,
-      community: updatedCommunity,
+      data: updatedCommunity,
       mensaje: "Comunidad actualizada con éxito",
       message: "Community updated successfully",
     });
