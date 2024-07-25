@@ -16,7 +16,7 @@ const createCommunity = async (req: Request, res: Response) => {
     let n = 0;
 
     for (let i = 0; i < array.length; i++) {
-      categories = await CommunityCategory.findOne({ code: array[n] });
+      categories = await CommunityCategory.findOne({ _id: array[n] });
       if (categories) {
         IDs.push(categories._id);
         n++;
