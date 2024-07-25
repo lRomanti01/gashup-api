@@ -153,7 +153,7 @@ const getCommunity = async (req: Request, res: Response) => {
 const updateCommunity = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
-    const { bannedIDs, adminIDs, categoryIDs, ...data } = req.body;
+    const { bannedUsers_id, admins_id, communityCategory_id, ...data } = req.body;
 
     const community = await Community.findById(_id);
     if (!community || !community.isActive) {
@@ -165,8 +165,8 @@ const updateCommunity = async (req: Request, res: Response) => {
     }
 
     // Update banned users
-    if (bannedIDs && bannedIDs.length > 0) {
-      const bannedUsers = await User.find({ _id: { $in: bannedIDs } });
+    if (bannedUsers_id && bannedUsers_id.length > 0) {
+      const bannedUsers = await User.find({ _id: { $in: bannedUsers_id } });
       const bannedUserIds = bannedUsers.map(user => user._id);
       await community.updateOne({
         $set: { bannedUsers_id: bannedUserIds },
@@ -175,8 +175,8 @@ const updateCommunity = async (req: Request, res: Response) => {
     }
 
     // Update admin users
-    if (adminIDs && adminIDs.length > 0) {
-      const adminUsers = await User.find({ _id: { $in: adminIDs } });
+    if (admins_id && admins_id.length > 0) {
+      const adminUsers = await User.find({ _id: { $in: admins_id } });
       const adminUserIds = adminUsers.map(user => user._id);
       await community.updateOne({
         $set: { admins_id:  adminUserIds  },
@@ -184,8 +184,8 @@ const updateCommunity = async (req: Request, res: Response) => {
     }
 
     // Update categories
-    if (categoryIDs && categoryIDs.length > 0) {
-      const categories = await CommunityCategory.find({ _id: { $in: categoryIDs } });
+    if (communityCategory_id && communityCategory_id.length > 0) {
+      const categories = await CommunityCategory.find({ _id: { $in: communityCategory_id } });
       const categoryIds = categories.map(category => category._id);
       await community.updateOne({
         $set: { category_id: categoryIds },
