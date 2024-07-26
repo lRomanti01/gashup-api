@@ -413,12 +413,14 @@ const userProfile = async (req: Request, res: Response) => {
     // Agrupa los comentarios por post_id e incluye los subcomentarios en cada comentario
     const postsWithCommentsAndSubcomments = postUsuario.map((post) => ({
       ...post.toObject(),
+      postDate: calculateElapsedTime(post.postDate),
       comments: comments
         .filter((comment) => comment.post_id.equals(post._id))
         .map((comment) => ({
           ...comment.toObject(),
           subcomments:
             subcommentsGroupedByComment[comment._id.toString()] || [],
+            
         })),
     }));
 
