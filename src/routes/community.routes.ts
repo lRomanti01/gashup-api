@@ -31,7 +31,7 @@ communityRouter.get("/getCommunityChats/:_id", community.getCommunityChats);
 communityRouter.get("/hotCommunity", community.hotCommunity);// documentar
 communityRouter.get("/getCategories", community.getCategories);// documentar;
 communityRouter.get("/findCommunity/:ID", community.findCommunity);// documentar;
-communityRouter.get("/findCommunityChats/:communityId", community.findCommunityChats);// documentar;
+communityRouter.get("/findCommunityChats/:communityId/:userId", community.findCommunityChats);// documentar;
 
 
 

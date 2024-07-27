@@ -842,10 +842,8 @@ const findCommunity = async (req: Request, res: Response) => {
 //chat
 const findCommunityChats = async (req: Request, res: Response) => {
   try {
-    const { communityId } = req.params;
-    const {userId} = req.body;
+    const { communityId,userId } = req.params;
     const user = await User.findById(userId);
-
 
     // Buscar la comunidad por ID
     const community = await Community.findById(communityId);
