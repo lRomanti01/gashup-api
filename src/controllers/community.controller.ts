@@ -570,11 +570,9 @@ const createChatCommunity = async (req: Request, res: Response) => {
     } else {
       const img = await perfiles(req);
       const { imgUrl } = img;
-      const { bannerUrl } = img;
       const create: communitychats = await new CommunityChats({
         ...data,
         img: imgUrl ? imgUrl : null,
-        banner: bannerUrl ? bannerUrl : null,
       });
 
       await create.save();
@@ -876,9 +874,6 @@ const findCommunityChats = async (req: Request, res: Response) => {
     });
   }
 };
-
-
-
 
 // Categories
 
