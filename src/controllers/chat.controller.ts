@@ -186,12 +186,13 @@ const updateMessage = async (req: Request, res: Response) => {
     }
   };
   
+  
   const findChat = async (req: Request, res: Response) => {
     try {
-      const { ID,name } = req.params;
+      const { ID, name } = req.params;
   
-      // Buscar comunidades a las que el usuario es miembro
-      const user = await User.findById({_id: ID })
+      // Buscar el usuario por ID
+      const user = await User.findById(ID);
   
       if (!user) {
         return res.status(404).send({
@@ -201,52 +202,27 @@ const updateMessage = async (req: Request, res: Response) => {
         });
       }
   
-      const communities = await Community.find({ members_id: user._id });
+      // Buscar chats donde el usuario es miembro y que contengan el nombre parcial
+      const chats = await CommunityChats.find({ 
+        members_id: user._id,
+        name: { $regex: name, $options: 'i' }  // Buscar chats que contengan el nombre parcial (insensible a mayúsculas)
+      });
   
-      if (communities.length > 0) {
-        // Obtener IDs de las comunidades
-        const communityIds = communities.map(community => community._id);
-  
-        // Buscar chats en esas comunidades que contengan el nombre parcial
-        const chats = await CommunityChats.find({ 
-          community_id: { $in: communityIds },
-          name: { $regex: name, $options: 'i' }  // Buscar chats que contengan el nombre parcial (insensible a mayúsculas)
-        });
-  
-        // Verificar si el usuario es miembro del chat
-        const chatsWithMembership = chats.map(chat => {
-          const isMember = chat.members_id.includes(user._id);
-          return {
-            ...chat.toObject(),
-            miembro: isMember ? true : false
-          };
-        });
-  
-        res.status(200).send({
-          ok: true,
-          data: chatsWithMembership,
-          mensaje: "todos los chats de las comunidades a las que eres miembro",
-          message: "all community chats you are a member of",
-        });
-      } else {
-        res.status(404).send({
-          ok: false,
-          mensaje: "No se encontraron comunidades para el usuario",
-          message: "No communities found for the user",
-        });
-      }
+      res.status(200).send({
+        ok: true,
+        data: chats,
+        mensaje: "Todos los chats de las comunidades a las que eres miembro",
+        message: "All community chats you are a member of",
+      });
     } catch (error) {
       console.log(error);
       res.status(500).send({
         mensaje: "¡Ups! Algo salió mal",
-        message: "Ups! Something went wrong",
+        message: "Oops! Something went wrong",
         error,
       });
     }
   };
-  
-  
- 
   
 export { sendMessage, updateMessage, deleteMessage,getMessages, findChat};
 
