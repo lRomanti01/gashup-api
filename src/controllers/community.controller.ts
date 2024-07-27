@@ -843,10 +843,11 @@ const findCommunity = async (req: Request, res: Response) => {
 const findCommunityChats = async (req: Request, res: Response) => {
   try {
     const { communityId } = req.params;
-    const userId = req.body.userId
+    const {userId} = req.body;
 
     // Buscar la comunidad por ID
     const community = await Community.findById(communityId);
+    console.log(userId)
 
     if (!community) {
       return res.status(404).send({
