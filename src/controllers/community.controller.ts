@@ -844,6 +844,8 @@ const findCommunityChats = async (req: Request, res: Response) => {
   try {
     const { communityId } = req.params;
     const {userId} = req.body;
+    const user = await User.findById(userId);
+
 
     // Buscar la comunidad por ID
     const community = await Community.findById(communityId);
@@ -865,7 +867,7 @@ const findCommunityChats = async (req: Request, res: Response) => {
     // Agregar campo isMember a cada chat
     const chatsWithMembershipInfo = chats.map(chat => ({
       ...chat.toObject(),
-      isMember: chat.members_id.includes(userId),
+      isMember: chat.members_id.includes(user._id),
     }));
 
     res.status(200).send({
