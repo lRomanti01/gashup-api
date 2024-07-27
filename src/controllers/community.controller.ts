@@ -492,6 +492,7 @@ const assignAdmins = async (req: Request, res: Response) => {
     });
   }
 };
+// cambiar para que traiga los chat en los que estas
 const getCommunityChats = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
@@ -844,6 +845,7 @@ const findCommunity = async (req: Request, res: Response) => {
 const findCommunityChats = async (req: Request, res: Response) => {
   try {
     const { communityId } = req.params;
+    const userId = req.body.userId
 
     // Buscar la comunidad por ID
     const community = await Community.findById(communityId);
@@ -856,14 +858,20 @@ const findCommunityChats = async (req: Request, res: Response) => {
       });
     }
 
-    // Buscar chats en esa comunidad que contengan el nombre parcial
+    // Buscar chats en esa comunidad
     const chats = await CommunityChats.find({ 
       community_id: community._id,
     });
 
+    // Agregar campo isMember a cada chat
+    const chatsWithMembershipInfo = chats.map(chat => ({
+      ...chat.toObject(),
+      isMember: chat.members_id.includes(userId),
+    }));
+
     res.status(200).send({
       ok: true,
-      data: chats,
+      data: chatsWithMembershipInfo,
       mensaje: "Todos los chats de la comunidad",
       message: "All chats of the community",
     });
