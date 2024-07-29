@@ -171,9 +171,22 @@ const deletePost = async (req: Request, res: Response) => {
 const timeLine = async (req: Request, res: Response) => {
   try {
     const { _id } = req.body;
+    // Función para calcular la puntuación de cada publicación
+    function calculateHotScore(post) {
+      const likes = post.user_likes.length || 0;
+      const ageInHours =
+        (Date.now() - new Date(post.postDate).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
+      return likes / (ageInHours + 2);
+    };
+    const POST= Post.find({ isActive: true })
+    for (const post of await POST) {
+      post.hotScore = calculateHotScore(post);
+      await post.updateOne({ hotScore: post.hotScore }); // Guardar solo hotScore en la base de datos
+    }
+
 
     let allPosts = [];
-    if (_id) {
+    if (_id!=null) {
       const user = await User.findById(_id);
 
       if (!user) {
@@ -274,22 +287,11 @@ const timeLine = async (req: Request, res: Response) => {
         ...nonUserCommunityPosts,
       ];
 
-      // Función para calcular la puntuación de cada publicación
-      const calculateHotScore = (post) => {
-        const likes = post.user_likes.length || 0;
-        const ageInHours =
-          (Date.now() - new Date(post.postDate).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
-        return likes / (ageInHours + 2);
-      };
-
-      // Calcular la puntuación de "Hot" para cada publicación
-      for (const post of allPosts) {
-        post.hotScore = calculateHotScore(post);
-        await post.updateOne({ hotScore: post.hotScore }); // Guardar solo hotScore en la base de datos
-        post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
-      }
       // Ordenar las publicaciones por la puntuación de "Hot"
       allPosts.sort((a, b) => b.hotScore - a.hotScore);
+      for (const post of allPosts) {
+        post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
+      }
 
       // Separar publicaciones
       const userCommunityPosts = postsWithCommentsAndSubcomments(
@@ -372,6 +374,9 @@ const timeLine = async (req: Request, res: Response) => {
       allPosts = await Post.find({ isActive: true })
         .populate("community")
         .populate("user");
+        for (const post of allPosts) {
+          post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
+        }
 
       // Fisher-Yates shuffle algorithm para mezclar los posts aleatoriamente
       for (let i = allPosts.length - 1; i > 0; i--) {
@@ -397,9 +402,6 @@ const timeLine = async (req: Request, res: Response) => {
   }
 };
 
-
-
-//arreglar fecha
 const userProfile = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
@@ -799,6 +801,35 @@ const likeComment = async (req: Request, res: Response) => {
   }
 };
 
+const popularPost = async (req: Request, res: Response) => {
+  try {
+    const posts = await Post.find({ isActive: true })
+      .populate("community")
+      .populate("user");
+
+    // Ordenar los posts por número de likes en orden descendente
+    const sortedPosts = posts.sort((a, b) => b.user_likes.length - a.user_likes.length);
+    for (const post of sortedPosts) {
+      post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
+    }
+
+
+    res.status(200).json({
+      ok: true,
+      data: sortedPosts,
+      mensaje: "Publicaciones ordenadas por número de likes",
+      message: "Posts sorted by number of likes",
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error,
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+    });
+  }
+};
+
 export {
   createPost,
   getAllPostByCommunity,
@@ -817,4 +848,5 @@ export {
   updateComment,
   deleteResponseComment,
   updateResponseComment,
+  popularPost,
 };

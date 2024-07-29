@@ -17,6 +17,9 @@ postRouter.get("/userProfile/:_id", post.userProfile);
 postRouter.get("/timeLine", post.timeLine);
 postRouter.get("/getCommentsByPost/:_id", post.getCommentsByPost);
 postRouter.get("/getSubCommentsByComment/:_id", post.getSubCommentsByComment);
+postRouter.get("/popularPost/", post.popularPost);
+
+
 
 //put
 postRouter.put("/updatePost/:_id", post.updatePost);
