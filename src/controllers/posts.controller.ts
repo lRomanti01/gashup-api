@@ -170,192 +170,222 @@ const deletePost = async (req: Request, res: Response) => {
 
 const timeLine = async (req: Request, res: Response) => {
   try {
-    const { _id } = req.params;
-    const user = await User.findById(_id);
-    
-    // Obtener comunidades del usuario y comunidades en las que está baneado
-    const userCommunities = await Community.find({ members_id: user._id });
-    const bannedCommunities = await Community.find({ bannedUsers_id: user._id });
-    
-    const userCommunityIds = userCommunities.map((community) => community._id.toString());
-    const bannedCommunityIds = bannedCommunities.map((community) => community._id.toString());
-    
-    const friendsPosts = await Promise.all(
-      user.followers.map((IDfriend) =>
-        Post.find({ user: IDfriend, isActive: true })
-          .populate("community")
-          .populate("user")
-      )
-    );
+    const { _id } = req.body;
 
-    const communityPosts = await Promise.all(
-      userCommunityIds.map((communityID) =>
-        Post.find({
-          community: communityID,
-          isActive: true,
-          user: { $nin: user.followers },
-        })
-          .populate("community")
-          .populate("user")
-      )
-    );
+    let allPosts = [];
+    if (_id) {
+      const user = await User.findById(_id);
 
-    const nonUserCommunityPosts = await Post.find({
-      community: { $nin: [...userCommunityIds, ...bannedCommunityIds] },
-      isActive: true,
-      user: { $nin: user.followers },
-    })
-      .populate("community")
-      .populate("user");
-
-    // Comentarios
-    const friendscomments = await Comments.find({
-      post_id: { $in: friendsPosts.flat().map((post) => post._id) },
-    });
-    const noCommunitycomments = await Comments.find({
-      post_id: { $in: nonUserCommunityPosts.map((post) => post._id) },
-    });
-    const communitycomments = await Comments.find({
-      post_id: { $in: communityPosts.flat().map((post) => post._id) },
-    });
-
-    // Subcomentarios
-    const subfriendscomments = await SubComments.find({
-      comment_id: { $in: friendscomments.map((comment) => comment._id) },
-    });
-    const subnoCommunitycomments = await SubComments.find({
-      comment_id: { $in: noCommunitycomments.map((comment) => comment._id) },
-    });
-    const subcommunitycomments = await SubComments.find({
-      comment_id: { $in: communitycomments.map((comment) => comment._id) },
-    });
-
-    // Agrupar subcomentarios por comment_id usando strings como claves
-    const subcommentsGroupedByComment = [
-      ...subfriendscomments,
-      ...subnoCommunitycomments,
-      ...subcommunitycomments,
-    ].reduce((acc, subcomment) => {
-      const commentIdStr = subcomment.comment_id.toString(); // Convertir ObjectId a string
-      if (!acc[commentIdStr]) {
-        acc[commentIdStr] = [];
+      if (!user) {
+        return res.status(404).json({
+          ok: false,
+          mensaje: "Usuario no encontrado",
+          message: "User not found",
+        });
       }
-      acc[commentIdStr].push(subcomment);
-      return acc;
-    }, {} as { [key: string]: typeof subfriendscomments });
 
-    // Agrupar comentarios por post_id e incluir subcomentarios en cada comentario
-    const postsWithCommentsAndSubcomments = (posts, comments, subcomments) =>
-      posts.map((post) => ({
-        ...post.toObject(),
-        comments: comments
-          .filter((comment) => comment.post_id.equals(post._id))
-          .map((comment) => ({
-            ...comment.toObject(),
-            subcomments:
-              subcommentsGroupedByComment[comment._id.toString()] || [],
-          })),
-      }));
+      // Obtener comunidades del usuario y comunidades en las que está baneado
+      const userCommunities = await Community.find({ members_id: user._id });
+      const bannedCommunities = await Community.find({ bannedUsers_id: user._id });
 
-    const allPosts = [
-      ...communityPosts.flat(),
-      ...friendsPosts.flat(),
-      ...nonUserCommunityPosts,
-    ];
+      const userCommunityIds = userCommunities.map((community) => community._id.toString());
+      const bannedCommunityIds = bannedCommunities.map((community) => community._id.toString());
 
-    // Función para calcular la puntuación de cada publicación
-    const calculateHotScore = (post) => {
-      const likes = post.user_likes.length || 0;
-      const ageInHours =
-        (Date.now() - new Date(post.postDate).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
-      return likes / (ageInHours + 2);
-    };
+      const friendsPosts = await Promise.all(
+        user.followers.map((IDfriend) =>
+          Post.find({ user: IDfriend, isActive: true })
+            .populate("community")
+            .populate("user")
+        )
+      );
 
-    // Calcular la puntuación de "Hot" para cada publicación
-    allPosts.forEach((post) => {
-      post.hotScore = calculateHotScore(post);
-      post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación
-    });
+      const communityPosts = await Promise.all(
+        userCommunityIds.map((communityID) =>
+          Post.find({
+            community: communityID,
+            isActive: true,
+            user: { $nin: user.followers },
+          })
+            .populate("community")
+            .populate("user")
+        )
+      );
 
-    // Ordenar las publicaciones por la puntuación de "Hot"
-    allPosts.sort((a, b) => b.hotScore - a.hotScore);
+      const nonUserCommunityPosts = await Post.find({
+        community: { $nin: [...userCommunityIds, ...bannedCommunityIds] },
+        isActive: true,
+        user: { $nin: user.followers },
+      })
+        .populate("community")
+        .populate("user");
 
-    // Separar publicaciones
-    const userCommunityPosts = postsWithCommentsAndSubcomments(
-      allPosts.filter((post) =>
-        userCommunityIds.includes(String(post.community._id))
-      ),
-      communitycomments,
-      subcommunitycomments
-    );
+      // Comentarios
+      const friendscomments = await Comments.find({
+        post_id: { $in: friendsPosts.flat().map((post) => post._id) },
+      });
+      const noCommunitycomments = await Comments.find({
+        post_id: { $in: nonUserCommunityPosts.map((post) => post._id) },
+      });
+      const communitycomments = await Comments.find({
+        post_id: { $in: communityPosts.flat().map((post) => post._id) },
+      });
 
-    const friendsPostsOnly = postsWithCommentsAndSubcomments(
-      allPosts.filter((post) => user.followers.includes(String(post.user._id))),
-      friendscomments,
-      subfriendscomments
-    );
+      // Subcomentarios
+      const subfriendscomments = await SubComments.find({
+        comment_id: { $in: friendscomments.map((comment) => comment._id) },
+      });
+      const subnoCommunitycomments = await SubComments.find({
+        comment_id: { $in: noCommunitycomments.map((comment) => comment._id) },
+      });
+      const subcommunitycomments = await SubComments.find({
+        comment_id: { $in: communitycomments.map((comment) => comment._id) },
+      });
 
-    const otherCommunityPosts = postsWithCommentsAndSubcomments(
-      allPosts.filter(
-        (post) =>
-          !userCommunityIds.includes(String(post.community._id)) &&
-          !bannedCommunityIds.includes(String(post.community._id)) &&
-          !user.followers.includes(String(post.user._id))
-      ),
-      noCommunitycomments,
-      subnoCommunitycomments
-    );
+      // Agrupar subcomentarios por comment_id usando strings como claves
+      const subcommentsGroupedByComment = [
+        ...subfriendscomments,
+        ...subnoCommunitycomments,
+        ...subcommunitycomments,
+      ].reduce((acc, subcomment) => {
+        const commentIdStr = subcomment.comment_id.toString(); // Convertir ObjectId a string
+        if (!acc[commentIdStr]) {
+          acc[commentIdStr] = [];
+        }
+        acc[commentIdStr].push(subcomment);
+        return acc;
+      }, {} as { [key: string]: typeof subfriendscomments });
 
-    // Crear el feed combinado
-    const combinedFeed = [];
-    let userCommunityIndex = 0;
-    let friendsIndex = 0;
-    let otherCommunityIndex = 0;
+      // Agrupar comentarios por post_id e incluir subcomentarios en cada comentario
+      const postsWithCommentsAndSubcomments = (posts, comments, subcomments) =>
+        posts.map((post) => ({
+          ...post.toObject(),
+          comments: comments
+            .filter((comment) => comment.post_id.equals(post._id))
+            .map((comment) => ({
+              ...comment.toObject(),
+              subcomments:
+                subcommentsGroupedByComment[comment._id.toString()] || [],
+            })),
+        }));
 
-    while (
-      userCommunityIndex < userCommunityPosts.length ||
-      friendsIndex < friendsPostsOnly.length ||
-      otherCommunityIndex < otherCommunityPosts.length
-    ) {
-      // Agregar 2 posts de las comunidades del usuario
-      for (
-        let i = 0;
-        i < 2 && userCommunityIndex < userCommunityPosts.length;
-        i++
+      allPosts = [
+        ...communityPosts.flat(),
+        ...friendsPosts.flat(),
+        ...nonUserCommunityPosts,
+      ];
+
+      // Función para calcular la puntuación de cada publicación
+      const calculateHotScore = (post) => {
+        const likes = post.user_likes.length || 0;
+        const ageInHours =
+          (Date.now() - new Date(post.postDate).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
+        return likes / (ageInHours + 2);
+      };
+
+      // Calcular la puntuación de "Hot" para cada publicación
+      for (const post of allPosts) {
+        post.hotScore = calculateHotScore(post);
+        await post.updateOne({ hotScore: post.hotScore }); // Guardar solo hotScore en la base de datos
+        post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
+      }
+      // Ordenar las publicaciones por la puntuación de "Hot"
+      allPosts.sort((a, b) => b.hotScore - a.hotScore);
+
+      // Separar publicaciones
+      const userCommunityPosts = postsWithCommentsAndSubcomments(
+        allPosts.filter((post) =>
+          userCommunityIds.includes(String(post.community._id))
+        ),
+        communitycomments,
+        subcommunitycomments
+      );
+
+      const friendsPostsOnly = postsWithCommentsAndSubcomments(
+        allPosts.filter((post) => user.followers.includes(String(post.user._id))),
+        friendscomments,
+        subfriendscomments
+      );
+
+      const otherCommunityPosts = postsWithCommentsAndSubcomments(
+        allPosts.filter(
+          (post) =>
+            !userCommunityIds.includes(String(post.community._id)) &&
+            !bannedCommunityIds.includes(String(post.community._id)) &&
+            !user.followers.includes(String(post.user._id))
+        ),
+        noCommunitycomments,
+        subnoCommunitycomments
+      );
+
+      // Crear el feed combinado
+      const combinedFeed = [];
+      let userCommunityIndex = 0;
+      let friendsIndex = 0;
+      let otherCommunityIndex = 0;
+
+      while (
+        userCommunityIndex < userCommunityPosts.length ||
+        friendsIndex < friendsPostsOnly.length ||
+        otherCommunityIndex < otherCommunityPosts.length
       ) {
-        combinedFeed.push(userCommunityPosts[userCommunityIndex++]);
+        // Agregar 2 posts de las comunidades del usuario
+        for (
+          let i = 0;
+          i < 2 && userCommunityIndex < userCommunityPosts.length;
+          i++
+        ) {
+          combinedFeed.push(userCommunityPosts[userCommunityIndex++]);
+        }
+
+        // Agregar 4 posts de otras comunidades
+        for (
+          let i = 0;
+          i < 4 && otherCommunityIndex < otherCommunityPosts.length;
+          i++
+        ) {
+          combinedFeed.push(otherCommunityPosts[otherCommunityIndex++]);
+        }
+
+        // Agregar 2 posts de amigos
+        for (let i = 0; i < 2 && friendsIndex < friendsPostsOnly.length; i++) {
+          combinedFeed.push(friendsPostsOnly[friendsIndex++]);
+        }
+
+        // Agregar 4 posts de otras comunidades
+        for (
+          let i = 0;
+          i < 4 && otherCommunityIndex < otherCommunityPosts.length;
+          i++
+        ) {
+          combinedFeed.push(otherCommunityPosts[otherCommunityIndex++]);
+        }
       }
 
-      // Agregar 4 posts de otras comunidades
-      for (
-        let i = 0;
-        i < 4 && otherCommunityIndex < otherCommunityPosts.length;
-        i++
-      ) {
-        combinedFeed.push(otherCommunityPosts[otherCommunityIndex++]);
+      res.status(200).json({
+        ok: true,
+        data: [...combinedFeed],
+        mensaje: "Publicaciones de amigos y comunidades",
+        message: "Posts of friends and communities",
+      });
+    } else {
+      // Si el ID del usuario es null, obtener todos los posts y organizarlos aleatoriamente
+      allPosts = await Post.find({ isActive: true })
+        .populate("community")
+        .populate("user");
+
+      // Fisher-Yates shuffle algorithm para mezclar los posts aleatoriamente
+      for (let i = allPosts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allPosts[i], allPosts[j]] = [allPosts[j], allPosts[i]];
       }
 
-      // Agregar 2 posts de amigos
-      for (let i = 0; i < 2 && friendsIndex < friendsPostsOnly.length; i++) {
-        combinedFeed.push(friendsPostsOnly[friendsIndex++]);
-      }
-
-      // Agregar 4 posts de otras comunidades
-      for (
-        let i = 0;
-        i < 4 && otherCommunityIndex < otherCommunityPosts.length;
-        i++
-      ) {
-        combinedFeed.push(otherCommunityPosts[otherCommunityIndex++]);
-      }
+      res.status(200).json({
+        ok: true,
+        data: allPosts,
+        mensaje: "Publicaciones aleatorias",
+        message: "Random posts",
+      });
     }
-
-    res.status(200).json({
-      ok: true,
-      data: [...combinedFeed],
-      mensaje: "Publicaciones de amigos y comunidades",
-      message: "Posts of friends and communities",
-    });
   } catch (error) {
     console.error(error); // Log the detailed error
     res.status(500).json({
@@ -366,6 +396,7 @@ const timeLine = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 
 //arreglar fecha

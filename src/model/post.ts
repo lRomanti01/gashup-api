@@ -63,7 +63,7 @@ const postSchema = new Schema({
   },
   hotScore: {
     type: Number,
-    default: 0,
+    default: 0.0,
   },
   images: {
     type: Array<String>,
