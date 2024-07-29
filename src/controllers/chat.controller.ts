@@ -5,6 +5,7 @@ import moment from "moment";
 import { calculateElapsedTime } from "../helper/date";
 import Community, { community } from "../model/community";
 import CommunityChats, { communitychats } from "../model/communityChats";
+import communityChats from "../model/communityChats";
 
 
 const sendMessage = async (req: Request, res: Response) => {
@@ -111,80 +112,60 @@ const updateMessage = async (req: Request, res: Response) => {
     }
   };
   
-  const getMessages = async (req: Request, res: Response) => {
+  const getChatByID = async (req: Request, res: Response) => {
     try {
-      const { communityID, chatID } = req.params;
+      const { ID} = req.params;
   
-      const db = getDatabase();
-      const dbRef = ref(db, `${communityID}/${chatID}`);
+      const chat = (await communityChats.findById({_id:ID}));
   
-      onValue(dbRef, async (snapshot) => {
-        if (snapshot.exists() && Object.keys(snapshot.val()).length > 0) {
-          const data = snapshot.val();
-          const userID = [];
-          const usernames = [];
-          const img = [];
-          const messages = [];
-  
-          // Iterar sobre los mensajes y extraer los usernames y los datos de los mensajes
-          for (const key in data) {
-            if (data[key].username) {
-              usernames.push(data[key].username);
-              userID.push(data[key].userID);
-              img.push(data[key].img);
-            }
-            if (data[key].message) {
-              const mensaje = data[key].message;
-            }
-            // Añadir el mensaje al array
-            messages.push({
-              id: key,
-              userID: data[key].ID,
-              username: data[key].username,
-              img: data[key].img,
-              message: data[key].message,
-              publicationDate: data[key].publicationDate,
-            });
-          }
-  
-          // Encontrar usuarios por ID
-          try {
-            const users = await User.find({ _id: { $in: userID } });
-  
-            res.status(200).send({
-              ok: true,
-              messages,
-              users,
-              mensaje: "Mensajes obtenidos",
-              message: "Messages retrieved",
-            });
-          } catch (error) {
-            console.error(error);
-            res.status(500).send({
-              mensaje: "¡Ups! Algo salió mal al buscar usuarios",
-              message: "Ups! Something went wrong while fetching users",
-              error: error.message,
-            });
-          }
-        } else {
-          res.status(200).send({
-            ok: true,
-            messages: [],
-            users: [],
-            mensaje: "No hay mensajes en este chat",
-            message: "No messages in this chat",
-          });
-        }
+
+      res.status(200).send({
+        ok: true,
+        data: chat,
+        mensaje: "chat obtenido con éxito",
+        message: "chat retrieved successfully",
       });
     } catch (error) {
-      console.error(error);
+      console.log(error);
       res.status(500).send({
+        ok: false,
         mensaje: "¡Ups! Algo salió mal",
         message: "Ups! Something went wrong",
-        error: error.message,
+        error,
       });
     }
   };
+
+  const getMembers = async (req: Request, res: Response) => {
+    try {
+      const { ID } = req.params;
+  
+      const chat = await communityChats.findById({ _id: ID }).populate("members_id");
+      
+      chat.members_id.forEach((member: any) => {
+        member.followed = member.followed.length;
+        member.followers = member.followers.length;
+      });
+  
+      res.status(200).send({
+        ok: true,
+        data: chat,
+        mensaje: "miembros del chat obtenidos con éxito",
+        message: "Community retrieved successfully",
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).send({
+        ok: false,
+        mensaje: "¡Ups! Algo salió mal",
+        message: "Ups! Something went wrong",
+        error,
+      });
+    }
+  };
+  
+  
+  
   
   
   const findChat = async (req: Request, res: Response) => {
@@ -224,6 +205,8 @@ const updateMessage = async (req: Request, res: Response) => {
     }
   };
   
-export { sendMessage, updateMessage, deleteMessage,getMessages, findChat};
+
+
+export { sendMessage, updateMessage, deleteMessage,getChatByID,getMembers, findChat};
 
 
