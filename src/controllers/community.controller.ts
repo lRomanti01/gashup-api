@@ -743,13 +743,19 @@ const updateCommunityChat = async (req: Request, res: Response) => {
         message: "chat not found",
       });
     } else {
-      guardarImagenes(req);
-      const img = await guardarImagenes(req);
+      const img = await perfiles(req);
+      const { imgUrl } = img;
+      let ChatPicture;
+      console.log(img)
+      if(chat.img==null){ChatPicture=imgUrl;} //si no hay img en firebase
+      else if(data.img != chat.img ){deleteImage(chat.img);ChatPicture=imgUrl;}//si hay img en firebase
+      else if(!data.img && req.files['img'] == null && chat.img!=null){deleteImage(chat.img);ChatPicture=null; console.log("adios")}//si se queda sin img
+      else if(data.img){ChatPicture=data.img;}//dejar img
 
       const communityUpdate: communitychats | null =
         await CommunityChats.findByIdAndUpdate(
           _id,
-          { ...data, img: img },
+          { ...data, img:ChatPicture? ChatPicture:null },
           { new: true }
         );
       res.status(200).send({
