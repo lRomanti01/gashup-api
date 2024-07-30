@@ -10,7 +10,8 @@ chatRouter.put("/updateMessage/:communityID/:chatID/:messageID",chat.updateMessa
 //delete
 chatRouter.delete("/deleteMessage/:communityID/:chatID/:messageID",chat.deleteMessage);
 //get
-chatRouter.get("/getMessages/:communityID/:chatID",chat.getMessages);
+chatRouter.get("/getChatByID/:ID",chat.getChatByID);
+chatRouter.get("/getMembers/:ID",chat.getMembers);
 chatRouter.get("/findChat/:ID/:name",chat.findChat);
 
 
