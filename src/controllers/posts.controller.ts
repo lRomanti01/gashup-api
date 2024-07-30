@@ -587,7 +587,7 @@ const responseComment = async (req: Request, res: Response) => {
     const newComment: subcomments = await new SubComments({
       ...data,
       commentDate: moment().format("YYYY-MM-DD HH:mm:ss"),
-    });
+    }).populate("user_id");
     await newComment.save();
 
     const comment = {

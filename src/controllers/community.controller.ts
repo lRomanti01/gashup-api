@@ -10,7 +10,7 @@ import { guardarImagenes, deleteImage, perfiles } from "./uploadImage";
 const createCommunity = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
-    const array =JSON.parse( data.communityCategory_id);
+    const array = JSON.parse(data.communityCategory_id);
     const IDs = [];
     let categories: communitycategory;
     let n = 0;
@@ -85,7 +85,7 @@ const getCommunities = async (req: Request, res: Response) => {
 
 const getCommunity = async (req: Request, res: Response) => {
   try {
-    const { _id, user_id } = req.params;
+    const { _id } = req.params;
     const { ...data } = req.body;
 
     const communities = await Community.find({ isActive: true });
@@ -93,8 +93,7 @@ const getCommunity = async (req: Request, res: Response) => {
     const hotScoresArray = communities.map((community) => community.hotScore);
     hotScoresArray.sort((a, b) => b - a);
 
-    let communityQuery = Community.findById(_id)
-      .populate("owner_id");
+    let communityQuery = Community.findById(_id).populate("owner_id");
 
     // Verificar si hay members_id y admins_id antes de hacer populate
     const communityCheck = await Community.findById(_id).lean();
@@ -103,6 +102,12 @@ const getCommunity = async (req: Request, res: Response) => {
     }
     if (communityCheck.admins_id && communityCheck.admins_id.length > 0) {
       communityQuery = communityQuery.populate("admins_id");
+    }
+    if (
+      communityCheck.bannedUsers_id &&
+      communityCheck.bannedUsers_id.length > 0
+    ) {
+      communityQuery = communityQuery.populate("bannedUsers_id");
     }
 
     const community = await communityQuery.exec();
@@ -115,8 +120,8 @@ const getCommunity = async (req: Request, res: Response) => {
       });
     }
 
-    if (user_id) {
-      const user = await User.findOne({ _id: user_id });
+    if (data.user_id) {
+      const user = await User.findOne({ _id: data.user_id });
 
       if (community.bannedUsers_id.includes(user._id)) {
         return res.status(200).send({
@@ -149,7 +154,6 @@ const getCommunity = async (req: Request, res: Response) => {
   }
 };
 
-
 const updateCommunity = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
@@ -164,35 +168,55 @@ const updateCommunity = async (req: Request, res: Response) => {
       });
     }
 
-    const ban = JSON.parse(data.bannedUsers_id); 
+    const ban = JSON.parse(data.bannedUsers_id);
 
     // Update banned users
     if (data.bannedUsers_id && ban.length > 0) {
       const bannedUsers = await User.find({ _id: { $in: ban } });
-      const bannedUserIds = bannedUsers.map(user => user._id);
+      const bannedUserIds = bannedUsers.map((user) => user._id);
+
       await community.updateOne({
         $set: { bannedUsers_id: bannedUserIds },
         $pull: { members_id: { $in: bannedUserIds } },
       });
+    } else {
+      await community.updateOne({
+        $set: { bannedUsers_id: [] },
+      });
     }
+
+     const idsToRemoveFromBanned = community.bannedUsers_id.filter(
+       (id) => !data.bannedUsers_id.includes(id)
+     );
+     console.log("no baneados", idsToRemoveFromBanned);
+
+     if (idsToRemoveFromBanned.length > 0) {
+       await community.updateOne({
+         $addToSet: { members_id: { $each: idsToRemoveFromBanned } },
+       });
+     }
 
     const admin = JSON.parse(data.admins_id);
     // Update admin users
     if (data.admins_id && admin.length > 0) {
       const adminUsers = await User.find({ _id: { $in: admin } });
-      const adminUserIds = adminUsers.map(user => user._id);
+      const adminUserIds = adminUsers.map((user) => user._id);
       await community.updateOne({
         $set: { admins_id: adminUserIds },
       });
+    } else {
+      await community.updateOne({
+        $set: { admins_id: [] },
+      });
     }
-    const CAT = JSON.parse(data.communityCategory_id); 
+    const CAT = JSON.parse(data.communityCategory_id);
 
     // Update categories
     if (data.communityCategory_id && CAT.length > 0) {
       const categories = await CommunityCategory.find({ _id: { $in: CAT } });
-      const categoryIds = categories.map(category => category._id);
+      const categoryIds = categories.map((category) => category._id);
       await community.updateOne({
-        $set: { category_id: categoryIds },
+        $set: { communityCategory_id: categoryIds },
       });
     }
 
@@ -219,7 +243,7 @@ const updateCommunity = async (req: Request, res: Response) => {
         name: data.name,
         description: data.description,
         img: profilePicture ? profilePicture : null,
-        banner: banner ? banner : null
+        banner: banner ? banner : null,
       },
       { new: true }
     );
@@ -240,7 +264,6 @@ const updateCommunity = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 const deleteCommunity = async (req: Request, res: Response) => {
   try {
@@ -390,7 +413,7 @@ const banFromCommunity = async (req: Request, res: Response) => {
   try {
     const { ...data } = req.body;
     const { _id } = req.params;
-    
+
     // Buscar la comunidad por ID
     const community = await Community.findById(_id);
     if (!community) {
@@ -515,25 +538,30 @@ const getCommunityChats = async (req: Request, res: Response) => {
 
     // Unir las comunidades en una sola lista y eliminar duplicados
     const allCommunities = [...memberCommunities, ...ownedCommunities];
-    const uniqueCommunityIds = [...new Set(allCommunities.map(community => community._id))];
+    const uniqueCommunityIds = [
+      ...new Set(allCommunities.map((community) => community._id)),
+    ];
 
     if (uniqueCommunityIds.length > 0) {
       // Buscar chats en esas comunidades
-      const chats = await CommunityChats.find({ community_id: { $in: uniqueCommunityIds } });
+      const chats = await CommunityChats.find({
+        community_id: { $in: uniqueCommunityIds },
+      });
 
       // Verificar si el usuario es miembro del chat
       const chatsWithMembership = chats.map((chat) => {
         const isMember = chat.members_id.includes(user._id);
         return {
           ...chat.toObject(),
-          isMember: isMember ? true : false
+          isMember: isMember ? true : false,
         };
       });
 
       res.status(200).send({
         ok: true,
         data: chatsWithMembership,
-        mensaje: "Todos los chats de las comunidades a las que eres miembro o dueño",
+        mensaje:
+          "Todos los chats de las comunidades a las que eres miembro o dueño",
         message: "All community chats you are a member of or owner",
       });
     } else {
@@ -855,7 +883,7 @@ const findCommunityChats = async (req: Request, res: Response) => {
     }
 
     // Buscar chats en esa comunidad que contengan el nombre parcial
-    const chats = await CommunityChats.find({ 
+    const chats = await CommunityChats.find({
       community_id: community._id,
     });
 
@@ -941,5 +969,5 @@ export {
   createCategory,
   getCategories,
   findCommunity,
-  findCommunityChats
+  findCommunityChats,
 };

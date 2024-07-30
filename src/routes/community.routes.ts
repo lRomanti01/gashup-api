@@ -25,7 +25,7 @@ communityRouter.delete("/deleteCommunityChat/:_id",community.deleteCommunityChat
 
 //get
 communityRouter.get("/getCommunities", community.getCommunities);
-communityRouter.get("/getCommunity/:_id/:user_id", community.getCommunity);
+communityRouter.get("/getCommunity/:_id", community.getCommunity);
 communityRouter.get("/getCommunitiesForCategories",community.getCommunitiesForCategories);
 communityRouter.get("/getCommunityChats/:_id", community.getCommunityChats);
 communityRouter.get("/hotCommunity", community.hotCommunity);// documentar
