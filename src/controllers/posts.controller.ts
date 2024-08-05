@@ -211,13 +211,13 @@ const timeLine = async (req: Request, res: Response) => {
             .populate("user")
         )
       );
-
+      const userId = user._id
       const communityPosts = await Promise.all(
         userCommunityIds.map((communityID) =>
           Post.find({
             community: communityID,
             isActive: true,
-            user: { $nin: user.followers },
+            user: { $nin: [userId] },
           })
             .populate("community")
             .populate("user")
@@ -227,7 +227,8 @@ const timeLine = async (req: Request, res: Response) => {
       const nonUserCommunityPosts = await Post.find({
         community: { $nin: [...userCommunityIds, ...bannedCommunityIds] },
         isActive: true,
-        user: { $nin: user.followers },
+        user: { $nin: [...user.followers, user._id] }
+
       })
         .populate("community")
         .populate("user");

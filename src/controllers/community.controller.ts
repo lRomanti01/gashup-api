@@ -188,7 +188,6 @@ const updateCommunity = async (req: Request, res: Response) => {
      const idsToRemoveFromBanned = community.bannedUsers_id.filter(
        (id) => !data.bannedUsers_id.includes(id)
      );
-     console.log("no baneados", idsToRemoveFromBanned);
 
      if (idsToRemoveFromBanned.length > 0) {
        await community.updateOne({
@@ -271,7 +270,6 @@ const deleteCommunity = async (req: Request, res: Response) => {
     const { ...data } = req.body;
     const community: community | null = await Community.findById({ _id });
     const owner: user | null = await User.findById(data.ownerID);
-    console.log(community.owner_id, "bueno", owner._id);
     if (community.owner_id.equals(owner._id)) {
       if (!community || community.isActive == false) {
         res.status(404).json({
@@ -397,7 +395,6 @@ const joinCommunity = async (req: Request, res: Response) => {
         mensaje: "No se encontró la comunidad o el usuario",
         message: "Community or user not found",
       });
-      console.log(community);
     }
   } catch (error) {
     console.log(error);
@@ -746,10 +743,9 @@ const updateCommunityChat = async (req: Request, res: Response) => {
       const img = await perfiles(req);
       const { imgUrl } = img;
       let ChatPicture;
-      console.log(img)
       if(chat.img==null){ChatPicture=imgUrl;} //si no hay img en firebase
       else if(data.img != chat.img ){deleteImage(chat.img);ChatPicture=imgUrl;}//si hay img en firebase
-      else if(!data.img && req.files['img'] == null && chat.img!=null){deleteImage(chat.img);ChatPicture=null; console.log("adios")}//si se queda sin img
+      else if(!data.img && req.files['img'] == null && chat.img!=null){deleteImage(chat.img);ChatPicture=null;}//si se queda sin img
       else if(data.img){ChatPicture=data.img;}//dejar img
 
       const communityUpdate: communitychats | null =
@@ -881,7 +877,6 @@ const findCommunityChats = async (req: Request, res: Response) => {
 
     // Buscar la comunidad por ID
     const community = await Community.findById(communityId);
-    console.log(userId)
 
     if (!community) {
       return res.status(404).send({

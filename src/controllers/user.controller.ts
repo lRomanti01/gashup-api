@@ -97,7 +97,7 @@ const updateUser = async (req: Request, res: Response) => {
 
     if(user.img==null){profilePictur=imgUrl;} //si no hay img en firebase
     else if(data.img != user.img ){deleteImage(user.img);profilePictur=imgUrl;}//si hay img en firebase
-    else if(!data.img && req.files['img'] == null && user.img!=null){deleteImage(user.img);profilePictur=null; console.log("adios")}//si se queda sin img
+    else if(!data.img && req.files['img'] == null && user.img!=null){deleteImage(user.img);profilePictur=null;}//si se queda sin img
     else if(data.img){profilePictur=data.img;}//dejar img
 
     const update: user | null = await User.findByIdAndUpdate(
