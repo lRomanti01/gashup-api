@@ -6,6 +6,7 @@ import CommunityCategory, {
   communitycategory,
 } from "../model/communityCategory";
 import { guardarImagenes, deleteImage, perfiles } from "./uploadImage";
+import communityChats from "../model/communityChats";
 
 const createCommunity = async (req: Request, res: Response) => {
   try {
@@ -512,7 +513,7 @@ const assignAdmins = async (req: Request, res: Response) => {
     });
   }
 };
-// cambiar para que traiga los chat en los que estas
+// cambiar a chats
 const getCommunityChats = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
@@ -528,56 +529,28 @@ const getCommunityChats = async (req: Request, res: Response) => {
       });
     }
 
-    // Buscar comunidades a las que el usuario es miembro
-    const memberCommunities = await Community.find({ members_id: user._id });
+    // Buscar chats activos en CommunityChats y filtrar para obtener solo los chats en los que el usuario es miembro
+    const chats = await communityChats.find({
+      isActive: true,  // Suponiendo que hay un campo isActive que indica si el chat está activo
+      members_id: { $in: [user._id] },  // Filtrar para obtener solo los chats en los que el usuario es miembro
+    });
 
-    // Buscar comunidades que el usuario posee (suponiendo que tienes un campo 'owner_id' en el esquema de la comunidad)
-    const ownedCommunities = await Community.find({ owner_id: user._id });
-
-    // Unir las comunidades en una sola lista y eliminar duplicados
-    const allCommunities = [...memberCommunities, ...ownedCommunities];
-    const uniqueCommunityIds = [
-      ...new Set(allCommunities.map((community) => community._id)),
-    ];
-
-    if (uniqueCommunityIds.length > 0) {
-      // Buscar chats en esas comunidades
-      const chats = await CommunityChats.find({
-        community_id: { $in: uniqueCommunityIds },
-      });
-
-      // Verificar si el usuario es miembro del chat
-      const chatsWithMembership = chats.map((chat) => {
-        const isMember = chat.members_id.includes(user._id);
-        return {
-          ...chat.toObject(),
-          isMember: isMember ? true : false,
-        };
-      });
-
-      res.status(200).send({
-        ok: true,
-        data: chatsWithMembership,
-        mensaje:
-          "Todos los chats de las comunidades a las que eres miembro o dueño",
-        message: "All community chats you are a member of or owner",
-      });
-    } else {
-      res.status(404).send({
-        ok: false,
-        mensaje: "No se encontraron comunidades para el usuario",
-        message: "No communities found for the user",
-      });
-    }
+    res.status(200).send({
+      ok: true,
+      data: chats,
+      mensaje: "Todos los chats en los que eres miembro",
+      message: "All chats you are a member of",
+    });
   } catch (error) {
     console.log(error);
     res.status(500).send({
       mensaje: "¡Ups! Algo salió mal",
-      message: "Ups! Something went wrong",
+      message: "Oops! Something went wrong",
       error,
     });
   }
 };
+
 
 const createChatCommunity = async (req: Request, res: Response) => {
   try {
