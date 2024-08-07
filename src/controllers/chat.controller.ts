@@ -164,9 +164,42 @@ const updateMessage = async (req: Request, res: Response) => {
     }
   };
   
+  const userChats = async (req: Request, res: Response) => {
+    try {
+      const { _id } = req.params;
   
+      // Buscar el usuario
+      const user: user = await User.findOne({ _id });
   
+      if (!user) {
+        return res.status(404).send({
+          ok: false,
+          mensaje: "Usuario no encontrado",
+          message: "User not found",
+        });
+      }
   
+      // Buscar chats activos en CommunityChats y filtrar para obtener solo los chats en los que el usuario es miembro
+      const chats = await communityChats.find({
+        isActive: true,  // Suponiendo que hay un campo isActive que indica si el chat está activo
+        members_id: { $in: [user._id] },  // Filtrar para obtener solo los chats en los que el usuario es miembro
+      });
+  
+      res.status(200).send({
+        ok: true,
+        data: chats,
+        mensaje: "Todos los chats en los que eres miembro",
+        message: "All chats you are a member of",
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).send({
+        mensaje: "¡Ups! Algo salió mal",
+        message: "Oops! Something went wrong",
+        error,
+      });
+    }
+  };
   
   const findChat = async (req: Request, res: Response) => {
     try {
@@ -207,6 +240,6 @@ const updateMessage = async (req: Request, res: Response) => {
   
 
 
-export { sendMessage, updateMessage, deleteMessage,getChatByID,getMembers, findChat};
+export { sendMessage, updateMessage, deleteMessage,getChatByID,getMembers, findChat, userChats};
 
 

@@ -13,6 +13,8 @@ chatRouter.delete("/deleteMessage/:communityID/:chatID/:messageID",chat.deleteMe
 chatRouter.get("/getChatByID/:ID",chat.getChatByID);
 chatRouter.get("/getMembers/:ID",chat.getMembers);
 chatRouter.get("/findChat/:ID/:name",chat.findChat);
+chatRouter.get("/userChats/:ID",chat.userChats);
+
 
 
 export default chatRouter;
