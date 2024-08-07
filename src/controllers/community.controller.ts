@@ -407,73 +407,6 @@ const joinCommunity = async (req: Request, res: Response) => {
     });
   }
 };
-const banFromCommunity = async (req: Request, res: Response) => {
-  try {
-    const { ...data } = req.body;
-    const { _id } = req.params;
-
-    // Buscar la comunidad por ID
-    const community = await Community.findById(_id);
-    if (!community) {
-      return res.status(404).send({
-        ok: false,
-        mensaje: "Comunidad no encontrada",
-        message: "Community not found",
-      });
-    }
-
-    // Buscar el usuario que realiza la acción y el usuario a ser baneado
-    const user = await User.findOne({ _id: data.userID });
-    const banned = await User.findOne({ _id: data.bannedID });
-
-    if (!user || !banned) {
-      return res.status(404).send({
-        ok: false,
-        mensaje: "Usuario no encontrado",
-        message: "User not found",
-      });
-    }
-
-    if (
-      community.owner_id.equals(user._id) ||
-      community.admins_id.includes(user._id)
-    ) {
-      // Banear al usuario de la comunidad
-      const ban = await community.updateOne({
-        $push: { bannedUsers_id: banned._id },
-        $pull: { members_id: banned._id },
-      });
-
-      // Sacar al usuario de todos los chats de esa comunidad
-      await CommunityChats.updateMany(
-        { community_id: community._id },
-        { $pull: { members_id: banned._id } }
-      );
-
-      res.status(200).send({
-        ok: true,
-        ban,
-        mensaje: "Usuario baneado de la comunidad y chats con éxito",
-        message: "User banned from the community and chats successfully",
-      });
-    } else {
-      res.status(400).send({
-        ok: false,
-        mensaje:
-          "Solamente el dueño y los administradores de la comunidad pueden banear usuarios",
-        message: "Only the owner and community admins can ban users",
-      });
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      ok: false,
-      error,
-      mensaje: "¡Ups! Algo salió mal",
-      message: "Ups! Something went wrong",
-    });
-  }
-};
 
 const assignAdmins = async (req: Request, res: Response) => {
   try {
@@ -513,44 +446,6 @@ const assignAdmins = async (req: Request, res: Response) => {
     });
   }
 };
-// cambiar a chats
-const getCommunityChats = async (req: Request, res: Response) => {
-  try {
-    const { _id } = req.params;
-
-    // Buscar el usuario
-    const user: user = await User.findOne({ _id });
-
-    if (!user) {
-      return res.status(404).send({
-        ok: false,
-        mensaje: "Usuario no encontrado",
-        message: "User not found",
-      });
-    }
-
-    // Buscar chats activos en CommunityChats y filtrar para obtener solo los chats en los que el usuario es miembro
-    const chats = await communityChats.find({
-      isActive: true,  // Suponiendo que hay un campo isActive que indica si el chat está activo
-      members_id: { $in: [user._id] },  // Filtrar para obtener solo los chats en los que el usuario es miembro
-    });
-
-    res.status(200).send({
-      ok: true,
-      data: chats,
-      mensaje: "Todos los chats en los que eres miembro",
-      message: "All chats you are a member of",
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      mensaje: "¡Ups! Algo salió mal",
-      message: "Oops! Something went wrong",
-      error,
-    });
-  }
-};
-
 
 const createChatCommunity = async (req: Request, res: Response) => {
   try {
@@ -886,6 +781,7 @@ const findCommunityChats = async (req: Request, res: Response) => {
   }
 };
 
+
 // Categories
 
 const createCategory = async (req: Request, res: Response) => {
@@ -941,13 +837,11 @@ export {
   leaveCommunity,
   joinCommunity,
   assignAdmins,
-  banFromCommunity,
   deleteCommunityChat,
   joinChatCommunity,
   createChatCommunity,
   leaveChatCommunity,
   updateCommunityChat,
-  getCommunityChats,
   hotCommunity,
   createCategory,
   getCategories,

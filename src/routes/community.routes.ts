@@ -20,14 +20,12 @@ communityRouter.put("/leaveChatCommunity/:_id",community.leaveChatCommunity);
 
 ///delete
 communityRouter.delete("/deleteCommunity/:_id", community.deleteCommunity);
-communityRouter.delete("/banFromCommunity/:_id", community.banFromCommunity);
 communityRouter.delete("/deleteCommunityChat/:_id",community.deleteCommunityChat);
 
 //get
 communityRouter.get("/getCommunities", community.getCommunities);
 communityRouter.get("/getCommunity/:_id", community.getCommunity);
 communityRouter.get("/getCommunitiesForCategories",community.getCommunitiesForCategories);
-communityRouter.get("/getCommunityChats/:_id", community.getCommunityChats);
 communityRouter.get("/hotCommunity", community.hotCommunity);// documentar
 communityRouter.get("/getCategories", community.getCategories);// documentar;
 communityRouter.get("/findCommunity/:ID", community.findCommunity);// documentar;
