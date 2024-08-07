@@ -24,6 +24,8 @@ postRouter.put("/updateComment/:commentId", post.updateComment);//documentar
 postRouter.put("/updateResponseComment/:responseCommentId", post.updateResponseComment);//documentar
 postRouter.put("/likePost/:_id", post.likePost);
 postRouter.put("/likeComment/:_id", post.likeComment);
+postRouter.put("/likeSubComment/:_id", post.likeSubComment);
+
 
 //delete
 postRouter.delete("/deletePost/:_id", post.deletePost);
