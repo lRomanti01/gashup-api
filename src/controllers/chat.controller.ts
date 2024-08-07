@@ -166,10 +166,10 @@ const updateMessage = async (req: Request, res: Response) => {
   
   const userChats = async (req: Request, res: Response) => {
     try {
-      const { _id } = req.params;
+      const { ID } = req.params;
   
       // Buscar el usuario
-      const user: user = await User.findOne({ _id });
+      const user: user = await User.findById({ _id: ID });
   
       if (!user) {
         return res.status(404).send({
