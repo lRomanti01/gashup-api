@@ -806,7 +806,7 @@ const likePost = async (req: Request, res: Response) => {
     const { ...data } = req.body;
     const post = await Post.findById(_id);
     if (!post.user_likes.includes(data.user)) {
-      await post.updateOne({ _id }, { $push: { user_likes: data.user } });
+      await post.updateOne( { $push: { user_likes: data.user } });
       res.status(200).send({
         ok: true,
         data: true,
@@ -814,7 +814,7 @@ const likePost = async (req: Request, res: Response) => {
         message: "you liked this post",
       });
     } else {
-      await post.updateOne({ _id }, { $pull: { user_likes: data.user } });
+      await post.updateOne({ $pull: { user_likes: data.user } });
       res.status(200).send({
         ok: true,
         data: false,
@@ -909,6 +909,9 @@ const popularPost = async (req: Request, res: Response) => {
     const sortedPosts = posts.sort(
       (a, b) => b.user_likes.length - a.user_likes.length
     );
+    for (const post of sortedPosts) {
+      post.postDate = calculateElapsedTime(post.postDate);  
+    }
 
     // Agregar la cantidad de comentarios a cada post después de ordenarlos
     const postsWithCommentCount = sortedPosts.map((post) => ({
@@ -916,10 +919,7 @@ const popularPost = async (req: Request, res: Response) => {
       commentCount: commentsCountMap[post._id.toString()] || 0,
     }));
 
-    // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
-    for (const post of sortedPosts) {
-      post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
-    }
+
 
     res.status(200).json({
       ok: true,
