@@ -747,7 +747,6 @@ const findCommunityChats = async (req: Request, res: Response) => {
 
     // Buscar la comunidad por ID
     const community = await Community.findById(communityId);
-
     if (!community) {
       return res.status(404).send({
         ok: false,
@@ -766,10 +765,10 @@ const findCommunityChats = async (req: Request, res: Response) => {
       ...chat.toObject(),
       isMember: chat.members_id.includes(user._id),
     }));
-
+const owner=community.owner_id;
     res.status(200).send({
       ok: true,
-      data: chatsWithMembershipInfo,
+      data: {chatsWithMembershipInfo,owner },
       mensaje: "Todos los chats de la comunidad",
       message: "All chats of the community",
     });
