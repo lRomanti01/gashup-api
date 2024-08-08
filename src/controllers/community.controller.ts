@@ -759,16 +759,17 @@ const findCommunityChats = async (req: Request, res: Response) => {
     const chats = await CommunityChats.find({ 
       community_id: community._id,
     });
+    const owner=community.owner_id;
 
     // Agregar campo isMember a cada chat
     const chatsWithMembershipInfo = chats.map(chat => ({
       ...chat.toObject(),
       isMember: chat.members_id.includes(user._id),
+      CommunityOwner: owner
     }));
-const owner=community.owner_id;
     res.status(200).send({
       ok: true,
-      data: {chatsWithMembershipInfo,owner },
+      data: chatsWithMembershipInfo,
       mensaje: "Todos los chats de la comunidad",
       message: "All chats of the community",
     });
