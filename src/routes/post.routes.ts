@@ -14,12 +14,15 @@ postRouter.post("/responseComment", post.responseComment);//documentar
 postRouter.get("/getAllPostByCommunity/:community", post.getAllPostByCommunity);
 postRouter.get("/getPostById/:_id", post.getPostById);
 postRouter.get("/userProfile/:_id", post.userProfile);
-postRouter.get("/timeLine/:_id", post.timeLine);
+postRouter.get("/timeLine", post.timeLine);
 postRouter.get("/getCommentsByPost/:_id", post.getCommentsByPost);
 postRouter.get("/getSubCommentsByComment/:_id", post.getSubCommentsByComment);
+postRouter.get("/popularPost/", post.popularPost);
+
+
 
 //put
-postRouter.put("/updatePost/:id", post.updatePost);
+postRouter.put("/updatePost/:_id", post.updatePost);
 postRouter.put("/updateComment/:commentId", post.updateComment);//documentar
 postRouter.put("/updateResponseComment/:responseCommentId", post.updateResponseComment);//documentar
 postRouter.put("/likePost/:_id", post.likePost);

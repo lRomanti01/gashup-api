@@ -279,6 +279,68 @@
  *         description: error del servidor
  */
 
+/** leaveCommunity
+     * @openapi
+     * '/api/community/leaveCommunity/{_id}':
+     *  put:
+     *     tags:
+     *     - Community
+     *     summary: dejar una comunidad de una comunidad
+     *     parameters:
+     *     - name: _id
+     *       in: path
+     *       required: true
+     *       description: ID de la comunidad
+     *     requestBody:
+     *      required: true
+     *      content:
+     *        application/json:
+     *           schema:
+     *            type: object
+     *            required:
+     *              - userID
+     *            properties:
+     *              userID:
+     *                type: ObjectId
+     *                default: ''
+     *     responses:
+     *      201:
+     *        description: se abandono la comunidad correctamente
+     *      500:
+     *         description: server err
+     */
+    
+/** leaveChatCommunity
+     * @openapi
+     * '/api/community/leaveChatCommunity/{_id}':
+     *  put:
+     *     tags:
+     *     - Community
+     *     summary: dejar un chat de una comunidad
+     *     parameters:
+     *     - name: _id
+     *       in: path
+     *       required: true
+     *       description: ID del chat
+     *     requestBody:
+     *      required: true
+     *      content:
+     *        application/json:
+     *           schema:
+     *            type: object
+     *            required:
+     *              - userID
+     *            properties:
+     *              userID:
+     *                type: ObjectId
+     *                default: ''
+     *     responses:
+     *      201:
+     *        description: se abandono el chat correctamente
+     *      500:
+     *         description: server err
+     */
+  
 /** DELETE Methods */
 /** deleteCommunity
      * @openapi
@@ -353,69 +415,7 @@
      *      500:
      *         description: server err
      */
-
-/** leaveCommunity
-     * @openapi
-     * '/api/community/leaveCommunity/{_id}':
-     *  delete:
-     *     tags:
-     *     - Community
-     *     summary: dejar una comunidad de una comunidad
-     *     parameters:
-     *     - name: _id
-     *       in: path
-     *       required: true
-     *       description: ID de la comunidad
-     *     requestBody:
-     *      required: true
-     *      content:
-     *        application/json:
-     *           schema:
-     *            type: object
-     *            required:
-     *              - userID
-     *            properties:
-     *              userID:
-     *                type: ObjectId
-     *                default: ''
-     *     responses:
-     *      201:
-     *        description: se abandono la comunidad correctamente
-     *      500:
-     *         description: server err
-     */
-    
-/** leaveChatCommunity
-     * @openapi
-     * '/api/community/leaveChatCommunity/{_id}':
-     *  delete:
-     *     tags:
-     *     - Community
-     *     summary: dejar un chat de una comunidad
-     *     parameters:
-     *     - name: _id
-     *       in: path
-     *       required: true
-     *       description: ID del chat
-     *     requestBody:
-     *      required: true
-     *      content:
-     *        application/json:
-     *           schema:
-     *            type: object
-     *            required:
-     *              - userID
-     *            properties:
-     *              userID:
-     *                type: ObjectId
-     *                default: ''
-     *     responses:
-     *      201:
-     *        description: se abandono el chat correctamente
-     *      500:
-     *         description: server err
-     */
-    
+  
 /** deleteCommunityChat
      * @openapi
      * '/api/community/deleteCommunityChat/{_id}':

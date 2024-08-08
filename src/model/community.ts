@@ -1,7 +1,7 @@
 import mongoose, { Schema, model, Types } from "mongoose";
 
 export interface community extends mongoose.Document {
-
+    _id: string;
     name: string;
     owner_id: Types.ObjectId;
     description: string;

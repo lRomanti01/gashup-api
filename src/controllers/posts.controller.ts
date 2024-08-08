@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import User, { user } from "../model/user";
 import Roles, { role } from "../model/role";
-import Post, { post } from "../model/post";
+import Post, { post } from "../model/post"; // Importa la interfaz junto con el modelo
 import Community, { community } from "../model/community";
 import Comments, { comments } from "../model/comments";
 import SubComments, { subcomments } from "../model/subComments";
@@ -42,7 +42,11 @@ const createPost = async (req: Request, res: Response) => {
 const getAllPostByCommunity = async (req: Request, res: Response) => {
   try {
     const { community } = req.params;
-    const posts = await Post.find({ community })
+    const posts = await Post.find({
+      community,
+      isActive: true,
+      isDeleted: false,
+    })
       .populate("community")
       .populate("user")
       .sort({ postDate: -1 });
@@ -130,11 +134,11 @@ const getPostById = async (req: Request, res: Response) => {
 
 const updatePost = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { _id } = req.params;
     const { ...data } = req.body;
 
     const post: post | null = await Post.findByIdAndUpdate(
-      id,
+      _id,
       { ...data },
       { new: true }
     );
@@ -158,10 +162,10 @@ const updatePost = async (req: Request, res: Response) => {
 
 const deletePost = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { _id } = req.params;
 
     const post: post | null = await Post.findByIdAndUpdate(
-      id,
+      _id,
       { isDeleted: true, isActive: false },
       { new: true }
     );
@@ -192,15 +196,16 @@ const timeLine = async (req: Request, res: Response) => {
       const ageInHours =
         (Date.now() - new Date(post.postDate).getTime()) / 36e5; // 36e5 es 3600000, que es el número de milisegundos en una hora
       return likes / (ageInHours + 2);
-    }
-    const POST = Post.find({ isActive: true });
+    };
+    const POST= Post.find({ isActive: true })
     for (const post of await POST) {
       post.hotScore = calculateHotScore(post);
       await post.updateOne({ hotScore: post.hotScore }); // Guardar solo hotScore en la base de datos
     }
 
+
     let allPosts = [];
-    if (_id != null) {
+    if (_id!=null) {
       const user = await User.findById(_id);
 
       if (!user) {
@@ -213,16 +218,10 @@ const timeLine = async (req: Request, res: Response) => {
 
       // Obtener comunidades del usuario y comunidades en las que está baneado
       const userCommunities = await Community.find({ members_id: user._id });
-      const bannedCommunities = await Community.find({
-        bannedUsers_id: user._id,
-      });
+      const bannedCommunities = await Community.find({ bannedUsers_id: user._id });
 
-      const userCommunityIds = userCommunities.map((community) =>
-        community._id.toString()
-      );
-      const bannedCommunityIds = bannedCommunities.map((community) =>
-        community._id.toString()
-      );
+      const userCommunityIds = userCommunities.map((community) => community._id.toString());
+      const bannedCommunityIds = bannedCommunities.map((community) => community._id.toString());
 
       const friendsPosts = await Promise.all(
         user.followers.map((IDfriend) =>
@@ -231,7 +230,7 @@ const timeLine = async (req: Request, res: Response) => {
             .populate("user")
         )
       );
-      const userId = user._id;
+      const userId = user._id
       const communityPosts = await Promise.all(
         userCommunityIds.map((communityID) =>
           Post.find({
@@ -247,7 +246,8 @@ const timeLine = async (req: Request, res: Response) => {
       const nonUserCommunityPosts = await Post.find({
         community: { $nin: [...userCommunityIds, ...bannedCommunityIds] },
         isActive: true,
-        user: { $nin: [...user.followers, user._id] },
+        user: { $nin: [...user.followers, user._id] }
+
       })
         .populate("community")
         .populate("user");
@@ -323,9 +323,7 @@ const timeLine = async (req: Request, res: Response) => {
       );
 
       const friendsPostsOnly = postsWithCommentsAndSubcomments(
-        allPosts.filter((post) =>
-          user.followers.includes(String(post.user._id))
-        ),
+        allPosts.filter((post) => user.followers.includes(String(post.user._id))),
         friendscomments,
         subfriendscomments
       );
@@ -396,9 +394,9 @@ const timeLine = async (req: Request, res: Response) => {
       allPosts = await Post.find({ isActive: true })
         .populate("community")
         .populate("user");
-      for (const post of allPosts) {
-        post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
-      }
+        for (const post of allPosts) {
+          post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
+        }
 
       // Fisher-Yates shuffle algorithm para mezclar los posts aleatoriamente
       for (let i = allPosts.length - 1; i > 0; i--) {
@@ -428,7 +426,6 @@ const userProfile = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const user = await User.findById(_id);
-    const { password, isActive, isDeleted, ...others } = user;
 
     if (!user) {
       return res.status(400).send({
@@ -476,13 +473,14 @@ const userProfile = async (req: Request, res: Response) => {
           ...comment.toObject(),
           subcomments:
             subcommentsGroupedByComment[comment._id.toString()] || [],
+            
         })),
     }));
 
     res.status(200).send({
       ok: true,
-      others,
-      postUsuario,
+      user: user,
+      posts: postsWithCommentsAndSubcomments,
       mensaje: "Post del usuario",
       message: "Post of the user",
     });
@@ -508,10 +506,9 @@ const comment = async (req: Request, res: Response) => {
     await newComment.populate("user_id");
 
     const comment = {
-      ...newComment.toObject(), 
+      ...newComment.toObject(),
       commentDate: calculateElapsedTime(newComment.commentDate),
     };
-
 
     res.status(200).send({
       ok: true,
@@ -648,12 +645,12 @@ const responseComment = async (req: Request, res: Response) => {
     const newComment: subcomments = await new SubComments({
       ...data,
       commentDate: moment().format("YYYY-MM-DD HH:mm:ss"),
-    });
+    }).populate("user_id");
     await newComment.save();
 
     const comment = {
-        ...newComment.toObject(),
-        commentDate: calculateElapsedTime(newComment.commentDate),
+      ...newComment.toObject(),
+      commentDate: calculateElapsedTime(newComment.commentDate),
     };
     res.status(200).send({
       ok: true,
@@ -687,7 +684,8 @@ const getSubCommentsByComment = async (req: Request, res: Response) => {
       ok: true,
       data: mappedComments,
       mensaje: "Comentarios encontrados correctamente",
-      message: "Comments found successfully", });
+      message: "Comments found successfully",
+    });
   } catch (error) {
     res.status(500).json({
       ok: false,
@@ -739,7 +737,8 @@ const updateResponseComment = async (req: Request, res: Response) => {
     if (minutesDiff > 25) {
       return res.status(403).json({
         ok: false,
-        mensaje: "La respuesta de comentario no se puede actualizar después de 25 minutos",
+        mensaje:
+          "La respuesta de comentario no se puede actualizar después de 25 minutos",
         message: "The response comment cannot be updated after 25 minutes",
       });
     }
@@ -827,6 +826,34 @@ const likeComment = async (req: Request, res: Response) => {
   }
 };
 
+const popularPost = async (req: Request, res: Response) => {
+  try {
+    const posts = await Post.find({ isActive: true })
+      .populate("community")
+      .populate("user");
+
+    // Ordenar los posts por número de likes en orden descendente
+    const sortedPosts = posts.sort((a, b) => b.user_likes.length - a.user_likes.length);
+    for (const post of sortedPosts) {
+      post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
+    }
+
+    res.status(200).json({
+      ok: true,
+      data: sortedPosts,
+      mensaje: "Publicaciones ordenadas por número de likes",
+      message: "Posts sorted by number of likes",
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error,
+      mensaje: "¡Ups! Algo salió mal",
+      message: "Ups! Something went wrong",
+    });
+  }
+};
+
 const likeSubComment = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
@@ -865,36 +892,6 @@ const likeSubComment = async (req: Request, res: Response) => {
   }
 };
 
-const popularPost = async (req: Request, res: Response) => {
-  try {
-    const posts = await Post.find({ isActive: true })
-      .populate("community")
-      .populate("user");
-
-    // Ordenar los posts por número de likes en orden descendente
-    const sortedPosts = posts.sort(
-      (a, b) => b.user_likes.length - a.user_likes.length
-    );
-    for (const post of sortedPosts) {
-      post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
-    }
-
-    res.status(200).json({
-      ok: true,
-      data: sortedPosts,
-      mensaje: "Publicaciones ordenadas por número de likes",
-      message: "Posts sorted by number of likes",
-    });
-  } catch (error) {
-    res.status(500).json({
-      ok: false,
-      error,
-      mensaje: "¡Ups! Algo salió mal",
-      message: "Ups! Something went wrong",
-    });
-  }
-};
-
 export {
   createPost,
   getAllPostByCommunity,
@@ -914,4 +911,5 @@ export {
   updateComment,
   deleteResponseComment,
   updateResponseComment,
+  popularPost,
 };

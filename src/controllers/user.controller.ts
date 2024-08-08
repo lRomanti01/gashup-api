@@ -97,7 +97,7 @@ const updateUser = async (req: Request, res: Response) => {
 
     if(user.img==null){profilePictur=imgUrl;} //si no hay img en firebase
     else if(data.img != user.img ){deleteImage(user.img);profilePictur=imgUrl;}//si hay img en firebase
-    else if(!data.img && req.files['img'] == null && user.img!=null){deleteImage(user.img);profilePictur=null; console.log("adios")}//si se queda sin img
+    else if(!data.img && req.files['img'] == null && user.img!=null){deleteImage(user.img);profilePictur=null;}//si se queda sin img
     else if(data.img){profilePictur=data.img;}//dejar img
 
     const update: user | null = await User.findByIdAndUpdate(
@@ -186,7 +186,7 @@ const follow= async (req, res)=>
             message: "Ups! Something went wrong",
           });
         }
-  
+   
   }
     
  const unfollow= async (req, res)=>
@@ -196,8 +196,8 @@ const follow= async (req, res)=>
            const {id}= req.params;
            const {...data}= req.body;
            const user= await User.findById(id);//usuario logeado
-           const userToFollow= await User.findById(data.userToFollow);//la persona que quiero dejar de seguir
-           if(!user.followed.includes(userToFollow._id))
+           const userToFollow= await User.findById(data.userToUnFollow);//la persona que quiero dejar de seguir
+           if(user.followed.includes(userToFollow._id))
               {
                  await user.updateOne({$pull:{followed:userToFollow._id}});
                  await userToFollow.updateOne({$pull:{followers:id}});
@@ -226,33 +226,42 @@ const follow= async (req, res)=>
           }
     
   } 
-const getFollowersAndFollowed= async (req, res)=>
-  {
-    try
-            {
-             const {id}= req.body;
-             const user= await User.findById(id);
-             const followers= user.followers
-             const followed= user.followed
-
-                    res.status(200).json(
-                    {
-                     ok: true,
-                     followers,followed,
-                     mensaje: "seguidores y seguidos",
-                     message: "followwers and followed",
-                    });
-            }catch (error) {
-              console.log(error);
-              res.status(500).json({
-                ok: false,
-                error,
-                mensaje: "¡Ups! Algo salió mal",
-                message: "Ups! Something went wrong",
-              });
-            }
-      
+  const getFollowersAndFollowed = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await User.findById(id); // Usuario logueado
+  
+      if (!user) {
+        return res.status(404).json({
+          ok: false,
+          mensaje: "Usuario no encontrado",
+          message: "User not found",
+        });
       }
+  
+      // Obtener los followers y followed usando sus IDs
+      const followers = await User.find({ _id: { $in: user.followers } });
+      const followed = await User.find({ _id: { $in: user.followed } });
+  
+      res.status(200).json({
+        ok: true,
+        followers,
+        followed,
+        mensaje: "Seguidores y seguidos",
+        message: "Followers and followed",
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        ok: false,
+        error,
+        mensaje: "¡Ups! Algo salió mal",
+        message: "Oops! Something went wrong",
+      });
+    }
+  };
+  
+  
 
 const getuser = async (req: Request, res: Response) => {
     try{

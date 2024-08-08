@@ -150,9 +150,9 @@
 *           schema:
 *            type: object
 *            required:
-*              - userToFollow
+*              - userToUnFollow
 *            properties:
-*              userToFollow:
+*              userToUnFollow:
 *                type: string
 *                default: ''
 *     responses:

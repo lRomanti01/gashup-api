@@ -1,6 +1,7 @@
 import mongoose, { Schema, model, Types } from "mongoose";
 
 export interface post extends mongoose.Document {
+  _id?: string;
   typePost: Types.ObjectId;
   title: string;
   description: string;
