@@ -607,11 +607,11 @@ const updateComment = async (req: Request, res: Response) => {
     const timeDiff = Math.abs(now.getTime() - commentCreatedAt.getTime());
     const minutesDiff = Math.floor(timeDiff / 60000);
 
-    if (minutesDiff > 25) {
+    if (minutesDiff > 1440) {
       return res.status(403).json({
         ok: false,
-        mensaje: "El comentario no se puede actualizar después de 25 minutos",
-        message: "The comment cannot be updated after 25 minutes",
+        mensaje: "El comentario no se puede actualizar después de un dia",
+        message: "The comment cannot be updated after one day",
       });
     }
 
@@ -734,12 +734,12 @@ const updateResponseComment = async (req: Request, res: Response) => {
     const timeDiff = Math.abs(now.getTime() - commentCreatedAt.getTime());
     const minutesDiff = Math.floor(timeDiff / 1000 / 60);
 
-    if (minutesDiff > 25) {
+    if (minutesDiff >1440) {
       return res.status(403).json({
         ok: false,
         mensaje:
-          "La respuesta de comentario no se puede actualizar después de 25 minutos",
-        message: "The response comment cannot be updated after 25 minutes",
+          "La respuesta de comentario no se puede actualizar después de un dia",
+        message: "The response comment cannot be updated after one day",
       });
     }
 
