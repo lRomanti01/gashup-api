@@ -805,8 +805,6 @@ const likePost = async (req: Request, res: Response) => {
     const { _id } = req.params;
     const { ...data } = req.body;
     const post = await Post.findById(_id);
-    console.log(_id);
-    console.log(data.user)
     if (!post.user_likes.includes(data.user)) {
       await post.updateOne( { $push: { user_likes: data.user } });
       res.status(200).send({
