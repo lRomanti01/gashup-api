@@ -22,9 +22,23 @@ const createPost = async (req: Request, res: Response) => {
       postDate: moment().format("YYYY-MM-DD HH:mm:ss"),
     });
     await create.save();
+
+    const post = await Post.findById(create._id)
+      .populate("community")
+      .populate("user")
+      .sort({ postDate: -1 });
+
+    const comments = await Comments.find({ post_id: post._id });
+
+    const newPost = {
+      ...post.toObject(), // Convert Mongoose document to plain JavaScript object
+      postDate: calculateElapsedTime(post.postDate),
+      comments,
+    };
+
     res.status(201).send({
       ok: true,
-      post: create,
+      post: newPost,
       mensaje: "Post creado con éxito",
       message: "post created successfully",
     });
@@ -806,7 +820,7 @@ const likePost = async (req: Request, res: Response) => {
     const { ...data } = req.body;
     const post = await Post.findById(_id);
     if (!post.user_likes.includes(data.user)) {
-      await post.updateOne( { $push: { user_likes: data.user } });
+      await post.updateOne({ $push: { user_likes: data.user } });
       res.status(200).send({
         ok: true,
         data: true,
@@ -882,7 +896,6 @@ const likeComment = async (req: Request, res: Response) => {
   }
 };
 
-
 const popularPost = async (req: Request, res: Response) => {
   try {
     // Obtener todos los posts activos
@@ -910,7 +923,7 @@ const popularPost = async (req: Request, res: Response) => {
       (a, b) => b.user_likes.length - a.user_likes.length
     );
     for (const post of sortedPosts) {
-      post.postDate = calculateElapsedTime(post.postDate);  
+      post.postDate = calculateElapsedTime(post.postDate);
     }
 
     // Agregar la cantidad de comentarios a cada post después de ordenarlos
@@ -918,8 +931,6 @@ const popularPost = async (req: Request, res: Response) => {
       ...post.toObject(),
       commentCount: commentsCountMap[post._id.toString()] || 0,
     }));
-
-
 
     res.status(200).json({
       ok: true,
@@ -955,7 +966,9 @@ const likeSubComment = async (req: Request, res: Response) => {
 
     if (!comment.user_likes.includes(user)) {
       await subComments.updateOne({ _id }, { $push: { user_likes: user } });
-      const updatedComment = await subComments.findById(_id).populate("user_id");
+      const updatedComment = await subComments
+        .findById(_id)
+        .populate("user_id");
       return res.status(200).json({
         ok: true,
         data: true,
@@ -985,7 +998,6 @@ const likeSubComment = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 export {
   createPost,
