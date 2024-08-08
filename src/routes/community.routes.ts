@@ -17,9 +17,9 @@ communityRouter.put("/assignAdmins/:_id", community.assignAdmins);
 communityRouter.put("/updateCommunityChat/:_id",upload,community.updateCommunityChat);
 communityRouter.put("/leaveCommunity/:_id", community.leaveCommunity);
 communityRouter.put("/leaveChatCommunity/:_id",community.leaveChatCommunity);
+communityRouter.put("/deleteCommunity/:_id", community.deleteCommunity);
 
 ///delete
-communityRouter.delete("/deleteCommunity/:_id", community.deleteCommunity);
 communityRouter.delete("/deleteCommunityChat/:_id",community.deleteCommunityChat);
 
 //get

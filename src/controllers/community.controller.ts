@@ -269,6 +269,7 @@ const deleteCommunity = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
     const { ...data } = req.body;
+    console.log(data)
     const community: community | null = await Community.findById({ _id });
     const owner: user | null = await User.findById(data.ownerID);
     if (community.owner_id.equals(owner._id)) {
