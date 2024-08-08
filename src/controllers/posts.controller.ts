@@ -190,6 +190,7 @@ const deletePost = async (req: Request, res: Response) => {
 const timeLine = async (req: Request, res: Response) => {
   try {
     const { _id } = req.body;
+
     // Función para calcular la puntuación de cada publicación
     function calculateHotScore(post) {
       const likes = post.user_likes.length || 0;
@@ -265,25 +266,22 @@ const timeLine = async (req: Request, res: Response) => {
         { $group: { _id: "$post_id", count: { $sum: 1 } } }
       ]);
 
-
-      // Agrupar comentarios y subcomentarios por post_id
-      const commentCountByPostId = (comments,) =>
-        comments.reduce((acc, comment) => {
-          acc[comment._id] = {
-            commentCount: comment.count || 0,
-          };
+      // Agrupar comentarios por post_id
+      const commentCountByPostId = (comments) =>
+        comments.reduce((acc, { _id, count }) => {
+          acc[_id.toString()] = count || 0;
           return acc;
-        }, {});
+        }, {} as { [key: string]: number });
 
       const commentCountByPostIdFriends = commentCountByPostId(friendsCommentsCount);
       const commentCountByPostIdNoCommunity = commentCountByPostId(noCommunityCommentsCount);
       const commentCountByPostIdCommunity = commentCountByPostId(communityCommentsCount);
 
-      // Agrupar publicaciones por post_id e incluir conteo de comentarios y subcomentarios
+      // Agrupar publicaciones por post_id e incluir conteo de comentarios
       const postsWithCommentCounts = (posts, commentCounts) =>
         posts.map((post) => ({
           ...post.toObject(),
-          commentCount: commentCounts[post._id] ? commentCounts[post._id].commentCount : 0,
+          commentCount: commentCounts[post._id.toString()] || 0,
         }));
 
       allPosts = [
@@ -372,25 +370,48 @@ const timeLine = async (req: Request, res: Response) => {
         message: "Posts of friends and communities",
       });
     } else {
-      // Si el ID del usuario es null, obtener todos los posts y organizarlos aleatoriamente
+      // Si el ID del usuario es null, obtener todos los posts y organizar el conteo de comentarios
       allPosts = await Post.find({ isActive: true })
         .populate("community")
         .populate("user");
-      for (const post of allPosts) {
-        post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
+
+      // Obtener todos los IDs de los posts
+      const allPostIds = allPosts.map(post => post._id);
+
+      // Contar los comentarios para cada post
+      const allCommentsCount = await Comments.aggregate([
+        { $match: { post_id: { $in: allPostIds } } },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } }
+      ]);
+
+      // Crear un mapa para acceder rápidamente a la cantidad de comentarios por post_id
+      const allCommentsCountMap = allCommentsCount.reduce((acc, { _id, count }) => {
+        acc[_id.toString()] = count;
+        return acc;
+      }, {} as { [key: string]: number });
+
+      // Agregar la cantidad de comentarios a cada post después de obtener todos los posts
+      const postsWithCommentCount = allPosts.map(post => ({
+        ...post.toObject(),
+        commentCount: allCommentsCountMap[post._id.toString()] || 0
+      }));
+
+      // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
+      for (const post of postsWithCommentCount) {
+        post.postDate = calculateElapsedTime(post.postDate);
       }
 
       // Fisher-Yates shuffle algorithm para mezclar los posts aleatoriamente
-      for (let i = allPosts.length - 1; i > 0; i--) {
+      for (let i = postsWithCommentCount.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [allPosts[i], allPosts[j]] = [allPosts[j], allPosts[i]];
+        [postsWithCommentCount[i], postsWithCommentCount[j]] = [postsWithCommentCount[j], postsWithCommentCount[i]];
       }
 
       res.status(200).json({
         ok: true,
-        data: allPosts,
-        mensaje: "Publicaciones aleatorias",
-        message: "Random posts",
+        data: postsWithCommentCount,
+        mensaje: "Publicaciones aleatorias con conteo de comentarios",
+        message: "Random posts with comment count",
       });
     }
   } catch (error) {
@@ -403,6 +424,7 @@ const timeLine = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 
 const userProfile = async (req: Request, res: Response) => {
@@ -811,31 +833,58 @@ const likeComment = async (req: Request, res: Response) => {
 
 const popularPost = async (req: Request, res: Response) => {
   try {
+    // Obtener todos los posts activos
     const posts = await Post.find({ isActive: true })
       .populate("community")
       .populate("user");
 
+    // Obtener los IDs de los posts
+    const postIds = posts.map(post => post._id);
+
+    // Contar los comentarios para cada post
+    const commentsCount = await Comments.aggregate([
+      { $match: { post_id: { $in: postIds } } },
+      { $group: { _id: "$post_id", count: { $sum: 1 } } }
+    ]);
+
+    // Crear un mapa para acceder rápidamente a la cantidad de comentarios por post_id
+    const commentsCountMap = commentsCount.reduce((acc, { _id, count }) => {
+      acc[_id.toString()] = count;
+      return acc;
+    }, {} as { [key: string]: number });
+
     // Ordenar los posts por número de likes en orden descendente
     const sortedPosts = posts.sort((a, b) => b.user_likes.length - a.user_likes.length);
+
+    // Agregar la cantidad de comentarios a cada post después de ordenarlos
+    const postsWithCommentCount = sortedPosts.map(post => ({
+      ...post.toObject(),
+      commentCount: commentsCountMap[post._id.toString()] || 0
+    }));
+
+    // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
     for (const post of sortedPosts) {
       post.postDate = calculateElapsedTime(post.postDate); // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
     }
 
     res.status(200).json({
       ok: true,
-      data: sortedPosts,
-      mensaje: "Publicaciones ordenadas por número de likes",
-      message: "Posts sorted by number of likes",
+      data: postsWithCommentCount,
+      mensaje: "Publicaciones ordenadas por número de likes y con conteo de comentarios",
+      message: "Posts sorted by number of likes with comment count",
     });
   } catch (error) {
+    console.error(error); // Log the detailed error
     res.status(500).json({
       ok: false,
-      error,
+      error: error.message,
       mensaje: "¡Ups! Algo salió mal",
       message: "Ups! Something went wrong",
     });
   }
 };
+
+
 
 const likeSubComment = async (req: Request, res: Response) => {
   try {

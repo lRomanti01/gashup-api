@@ -8,13 +8,14 @@ const postRouter: express.Router = express.Router();
 postRouter.post("/createPost", upload, post.createPost);
 postRouter.post("/comment", post.comment);
 postRouter.post("/responseComment", post.responseComment);//documentar
+postRouter.post("/timeLine", post.timeLine);
+
 
 
 //get
 postRouter.get("/getAllPostByCommunity/:community", post.getAllPostByCommunity);
 postRouter.get("/getPostById/:_id", post.getPostById);
 postRouter.get("/userProfile/:_id", post.userProfile);
-postRouter.get("/timeLine", post.timeLine);
 postRouter.get("/getCommentsByPost/:_id", post.getCommentsByPost);
 postRouter.get("/getSubCommentsByComment/:_id", post.getSubCommentsByComment);
 postRouter.get("/popularPost/", post.popularPost);
