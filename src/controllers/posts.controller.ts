@@ -94,7 +94,9 @@ const getPostById = async (req: Request, res: Response) => {
     }
 
     // Get community
-    let communityQuery: any = Community.findById(post.community._id).populate("owner_id");
+    let communityQuery: any = Community.findById(post.community._id).populate(
+      "owner_id"
+    );
     const communityCheck = await Community.findById(post.community._id).lean();
 
     //  Verify if admins exist
@@ -219,10 +221,16 @@ const timeLine = async (req: Request, res: Response) => {
 
       // Obtener comunidades del usuario y comunidades en las que está baneado
       const userCommunities = await Community.find({ members_id: user._id });
-      const bannedCommunities = await Community.find({ bannedUsers_id: user._id });
+      const bannedCommunities = await Community.find({
+        bannedUsers_id: user._id,
+      });
 
-      const userCommunityIds = userCommunities.map((community) => community._id.toString());
-      const bannedCommunityIds = bannedCommunities.map((community) => community._id.toString());
+      const userCommunityIds = userCommunities.map((community) =>
+        community._id.toString()
+      );
+      const bannedCommunityIds = bannedCommunities.map((community) =>
+        community._id.toString()
+      );
 
       const friendsPosts = await Promise.all(
         user.followers.map((IDfriend) =>
@@ -247,23 +255,35 @@ const timeLine = async (req: Request, res: Response) => {
       const nonUserCommunityPosts = await Post.find({
         community: { $nin: [...userCommunityIds, ...bannedCommunityIds] },
         isActive: true,
-        user: { $nin: [...user.followers, user._id] }
+        user: { $nin: [...user.followers, user._id] },
       })
         .populate("community")
         .populate("user");
 
       // Comentarios
       const friendsCommentsCount = await Comments.aggregate([
-        { $match: { post_id: { $in: friendsPosts.flat().map((post) => post._id) } } },
-        { $group: { _id: "$post_id", count: { $sum: 1 } } }
+        {
+          $match: {
+            post_id: { $in: friendsPosts.flat().map((post) => post._id) },
+          },
+        },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
       ]);
       const noCommunityCommentsCount = await Comments.aggregate([
-        { $match: { post_id: { $in: nonUserCommunityPosts.map((post) => post._id) } } },
-        { $group: { _id: "$post_id", count: { $sum: 1 } } }
+        {
+          $match: {
+            post_id: { $in: nonUserCommunityPosts.map((post) => post._id) },
+          },
+        },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
       ]);
       const communityCommentsCount = await Comments.aggregate([
-        { $match: { post_id: { $in: communityPosts.flat().map((post) => post._id) } } },
-        { $group: { _id: "$post_id", count: { $sum: 1 } } }
+        {
+          $match: {
+            post_id: { $in: communityPosts.flat().map((post) => post._id) },
+          },
+        },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
       ]);
 
       // Agrupar comentarios por post_id
@@ -273,9 +293,14 @@ const timeLine = async (req: Request, res: Response) => {
           return acc;
         }, {} as { [key: string]: number });
 
-      const commentCountByPostIdFriends = commentCountByPostId(friendsCommentsCount);
-      const commentCountByPostIdNoCommunity = commentCountByPostId(noCommunityCommentsCount);
-      const commentCountByPostIdCommunity = commentCountByPostId(communityCommentsCount);
+      const commentCountByPostIdFriends =
+        commentCountByPostId(friendsCommentsCount);
+      const commentCountByPostIdNoCommunity = commentCountByPostId(
+        noCommunityCommentsCount
+      );
+      const commentCountByPostIdCommunity = commentCountByPostId(
+        communityCommentsCount
+      );
 
       // Agrupar publicaciones por post_id e incluir conteo de comentarios
       const postsWithCommentCounts = (posts, commentCounts) =>
@@ -305,7 +330,9 @@ const timeLine = async (req: Request, res: Response) => {
       );
 
       const friendsPostsOnly = postsWithCommentCounts(
-        allPosts.filter((post) => user.followers.includes(String(post.user._id))),
+        allPosts.filter((post) =>
+          user.followers.includes(String(post.user._id))
+        ),
         commentCountByPostIdFriends
       );
 
@@ -376,24 +403,27 @@ const timeLine = async (req: Request, res: Response) => {
         .populate("user");
 
       // Obtener todos los IDs de los posts
-      const allPostIds = allPosts.map(post => post._id);
+      const allPostIds = allPosts.map((post) => post._id);
 
       // Contar los comentarios para cada post
       const allCommentsCount = await Comments.aggregate([
         { $match: { post_id: { $in: allPostIds } } },
-        { $group: { _id: "$post_id", count: { $sum: 1 } } }
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
       ]);
 
       // Crear un mapa para acceder rápidamente a la cantidad de comentarios por post_id
-      const allCommentsCountMap = allCommentsCount.reduce((acc, { _id, count }) => {
-        acc[_id.toString()] = count;
-        return acc;
-      }, {} as { [key: string]: number });
+      const allCommentsCountMap = allCommentsCount.reduce(
+        (acc, { _id, count }) => {
+          acc[_id.toString()] = count;
+          return acc;
+        },
+        {} as { [key: string]: number }
+      );
 
       // Agregar la cantidad de comentarios a cada post después de obtener todos los posts
-      const postsWithCommentCount = allPosts.map(post => ({
+      const postsWithCommentCount = allPosts.map((post) => ({
         ...post.toObject(),
-        commentCount: allCommentsCountMap[post._id.toString()] || 0
+        commentCount: allCommentsCountMap[post._id.toString()] || 0,
       }));
 
       // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
@@ -404,7 +434,10 @@ const timeLine = async (req: Request, res: Response) => {
       // Fisher-Yates shuffle algorithm para mezclar los posts aleatoriamente
       for (let i = postsWithCommentCount.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [postsWithCommentCount[i], postsWithCommentCount[j]] = [postsWithCommentCount[j], postsWithCommentCount[i]];
+        [postsWithCommentCount[i], postsWithCommentCount[j]] = [
+          postsWithCommentCount[j],
+          postsWithCommentCount[i],
+        ];
       }
 
       res.status(200).json({
@@ -424,8 +457,6 @@ const timeLine = async (req: Request, res: Response) => {
     });
   }
 };
-
-
 
 const userProfile = async (req: Request, res: Response) => {
   try {
@@ -478,7 +509,6 @@ const userProfile = async (req: Request, res: Response) => {
           ...comment.toObject(),
           subcomments:
             subcommentsGroupedByComment[comment._id.toString()] || [],
-            
         })),
     }));
 
@@ -622,7 +652,7 @@ const updateComment = async (req: Request, res: Response) => {
 
     Object.assign(comment, data);
     await comment.save();
-    
+
     const newComment = {
       ...comment.toObject(),
       commentDate: calculateElapsedTime(comment.commentDate),
@@ -725,7 +755,10 @@ const updateResponseComment = async (req: Request, res: Response) => {
     const { responseCommentId } = req.params;
     const { ...data } = req.body;
 
-    const subComment = await SubComments.findById(responseCommentId);
+    const subComment = await SubComments.findById(responseCommentId).populate(
+      "user_id"
+    );
+    console.log(subComment);
     if (!subComment) {
       return res.status(404).json({
         ok: false,
@@ -739,7 +772,7 @@ const updateResponseComment = async (req: Request, res: Response) => {
     const timeDiff = Math.abs(now.getTime() - commentCreatedAt.getTime());
     const minutesDiff = Math.floor(timeDiff / 1000 / 60);
 
-    if (minutesDiff >1440) {
+    if (minutesDiff > 1440) {
       return res.status(403).json({
         ok: false,
         mensaje:
@@ -773,7 +806,7 @@ const likePost = async (req: Request, res: Response) => {
     const { ...data } = req.body;
     const post = await Post.findById(_id);
     if (!post.user_likes.includes(data.user)) {
-      await post.updateOne({ $push: { user_likes: data.user } });
+      await post.updateOne({ _id }, { $push: { user_likes: data.user } });
       res.status(200).send({
         ok: true,
         data: true,
@@ -781,7 +814,7 @@ const likePost = async (req: Request, res: Response) => {
         message: "you liked this post",
       });
     } else {
-      await post.updateOne({ $pull: { user_likes: data.user } });
+      await post.updateOne({ _id }, { $pull: { user_likes: data.user } });
       res.status(200).send({
         ok: true,
         data: false,
@@ -802,23 +835,41 @@ const likePost = async (req: Request, res: Response) => {
 const likeComment = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
-    const { ...data } = req.body;
+    const { user } = req.body;
+
+    // Buscar el comentario por ID
     const comment = await Comments.findById(_id);
-    if (!comment.user_likes.includes(data.user)) {
-      await comment.updateOne({ $push: { user_likes: data.user } });
+
+    if (!comment) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Comentario no encontrado",
+        message: "Comment not found",
+      });
+    }
+
+    // Verificar si el usuario ya dio like al comentario
+    if (!comment.user_likes.includes(user)) {
+      // Agregar el usuario a los likes del comentario
+      await Comments.updateOne({ _id }, { $push: { user_likes: user } });
+      const newComment = await Comments.findById(_id).populate("user_id");
       res.status(200).send({
         ok: true,
         data: true,
-        mensaje: "has dado like a este comentario",
-        message: "you liked this comment",
+        comment: newComment,
+        mensaje: "Has dado like a este comentario",
+        message: "You liked this comment",
       });
     } else {
-      await comment.updateOne({ $pull: { user_likes: data.user } });
+      // Remover el usuario de los likes del comentario
+      await Comments.updateOne({ _id }, { $pull: { user_likes: user } });
+      const newComment = await Comments.findById(_id).populate("user_id");
       res.status(200).send({
         ok: true,
         data: false,
-        mensaje: "has quitado el like a este comentario",
-        message: "has removed the like from this comment",
+        comment: newComment,
+        mensaje: "Has quitado el like a este comentario",
+        message: "You removed the like from this comment",
       });
     }
   } catch (error) {
@@ -826,10 +877,11 @@ const likeComment = async (req: Request, res: Response) => {
       ok: false,
       error,
       mensaje: "¡Ups! Algo salió mal",
-      message: "Ups! Something went wrong",
+      message: "Oops! Something went wrong",
     });
   }
 };
+
 
 const popularPost = async (req: Request, res: Response) => {
   try {
@@ -839,12 +891,12 @@ const popularPost = async (req: Request, res: Response) => {
       .populate("user");
 
     // Obtener los IDs de los posts
-    const postIds = posts.map(post => post._id);
+    const postIds = posts.map((post) => post._id);
 
     // Contar los comentarios para cada post
     const commentsCount = await Comments.aggregate([
       { $match: { post_id: { $in: postIds } } },
-      { $group: { _id: "$post_id", count: { $sum: 1 } } }
+      { $group: { _id: "$post_id", count: { $sum: 1 } } },
     ]);
 
     // Crear un mapa para acceder rápidamente a la cantidad de comentarios por post_id
@@ -854,12 +906,14 @@ const popularPost = async (req: Request, res: Response) => {
     }, {} as { [key: string]: number });
 
     // Ordenar los posts por número de likes en orden descendente
-    const sortedPosts = posts.sort((a, b) => b.user_likes.length - a.user_likes.length);
+    const sortedPosts = posts.sort(
+      (a, b) => b.user_likes.length - a.user_likes.length
+    );
 
     // Agregar la cantidad de comentarios a cada post después de ordenarlos
-    const postsWithCommentCount = sortedPosts.map(post => ({
+    const postsWithCommentCount = sortedPosts.map((post) => ({
       ...post.toObject(),
-      commentCount: commentsCountMap[post._id.toString()] || 0
+      commentCount: commentsCountMap[post._id.toString()] || 0,
     }));
 
     // Calcular el tiempo transcurrido para cada publicación sin guardarlo en la base de datos
@@ -870,7 +924,8 @@ const popularPost = async (req: Request, res: Response) => {
     res.status(200).json({
       ok: true,
       data: postsWithCommentCount,
-      mensaje: "Publicaciones ordenadas por número de likes y con conteo de comentarios",
+      mensaje:
+        "Publicaciones ordenadas por número de likes y con conteo de comentarios",
       message: "Posts sorted by number of likes with comment count",
     });
   } catch (error) {
@@ -884,45 +939,53 @@ const popularPost = async (req: Request, res: Response) => {
   }
 };
 
-
-
 const likeSubComment = async (req: Request, res: Response) => {
   try {
     const { _id } = req.params;
-    const { ...data } = req.body;
+    const { user } = req.body;
+
     const comment = await subComments.findById(_id);
-    if (!comment.user_likes.includes(data.user)) {
-      await subComments.updateOne(
-        { _id },
-        { $push: { user_likes: data.user } }
-      );
-      res.status(200).send({
+    if (!comment) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Comentario no encontrado",
+        message: "Comment not found",
+      });
+    }
+
+    if (!comment.user_likes.includes(user)) {
+      await subComments.updateOne({ _id }, { $push: { user_likes: user } });
+      const updatedComment = await subComments.findById(_id).populate("user_id");
+      return res.status(200).json({
         ok: true,
         data: true,
-        mensaje: "has dado like a este comentario",
-        message: "you liked this comment",
+        comment: updatedComment,
+        mensaje: "Has dado like a este comentario",
+        message: "You liked this comment",
       });
     } else {
-      await subComments.updateOne(
-        { _id },
-        { $pull: { user_likes: data.user } }
-      );
-      res.status(200).send({
+      await subComments.updateOne({ _id }, { $pull: { user_likes: user } });
+      const updatedComment = await subComments
+        .findById(_id)
+        .populate("user_id");
+      return res.status(200).json({
         ok: true,
         data: false,
-        mensaje: "has quitado el like a este comentario",
-        message: "has removed the like from this comment",
+        comment: updatedComment,
+        mensaje: "Has quitado el like a este comentario",
+        message: "You removed the like from this comment",
       });
     }
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       ok: false,
       error,
       mensaje: "¡Ups! Algo salió mal",
-      message: "Ups! Something went wrong",
+      message: "Oops! Something went wrong",
     });
   }
 };
+
 
 export {
   createPost,
