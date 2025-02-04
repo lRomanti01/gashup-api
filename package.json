@@ -8,6 +8,7 @@
     "dev": "nodemon --config nodemon.json src/app.ts",
     "start": "node ./dist/app.js",
     "build": "npm run clean && tsc",
+    "vercel-build":"echo hello",
     "clean": "rm -rf ./dist && mkdir dist"
   },
   "author": "",
